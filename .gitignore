@@ -1,0 +1,39 @@
+.DS_store
+.vscode/
+.VSCodeCounter/
+*__pycache__/
+*.env
+
+# data file
+*.p
+*.json
+*.pkl
+*.mat
+*.pdf
+*.sh
+
+# Math prog files
+*.lp
+*.ilp
+*.mps
+
+
+# unwanted output
+*./temp
+*mip_sol*.pdf
+InterventionsMIP/plots/*.pdf
+InterventionsMIP/plots/ICU/*.pdf
+InterventionsMIP/output/*
+InterventionsMIP/reporting/reports/*
+InterventionsMIP/reporting/temp/*
+InterventionsMIP/instances/austin/archived_data/*
+InterventionsMIP/instances/houston/archived_data/*
+
+# Latex output
+*.aux
+*.log
+*./temp/*.pdf
+InterventionsMIP/plots/archive/scratch_rorange_818_IH.png
+InterventionsMIP/plots/archive/ICU_IHT.png
+*.zip
+*.zip
