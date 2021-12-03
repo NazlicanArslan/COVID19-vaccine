@@ -85,10 +85,10 @@ def simulate_vaccine(instance, policy, interventions, v_policy, seed=-1, **kwarg
         kwargs["acs_criStat"] = eval(kwargs["acs_policy_field"])[:t]
         kwargs["t_start"] = instance.epi.t_start
        
-
+       # breakpoint()
         # Get dynamic intervention and corresponding contact matrix
         k_t, kwargs = policy(t, N, criStat=eval(kwargs["policy_field"])[:t], IH=IH[:t], ToIY=ToIY[:t], **kwargs)
-      
+        
         v_policy = simulate_t(instance, v_policy, policy, interventions, t, epi_rand, epi_orig, rnd_epi, seed, **kwargs)
         S = np.zeros((T, A, L), dtype=types)
         E = np.zeros((T, A, L), dtype=types)
@@ -250,10 +250,10 @@ def simulate_t(instance, v_policy, policy, interventions, t_date, epi_rand, epi_
                 epi.delta_update_param(instance.delta_prev[t - T_delta])
                 
             #Update epi parameters for a new variant prevalence:    
-            if epi.new_variant:
-                T_variant = np.where(np.array(v_policy._instance.cal.calendar) == instance.variant_start)[0][0]
-                if t >= T_variant:
-                    epi.variant_update_param(instance.variant_prev[t - T_variant])        
+            # if epi.new_variant:
+            #     T_variant = np.where(np.array(v_policy._instance.cal.calendar) == instance.variant_start)[0][0]
+            #     if t >= T_variant:
+            #         epi.variant_update_param(instance.variant_prev[t - T_variant])        
             
 
                

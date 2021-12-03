@@ -135,6 +135,7 @@ def build_multi_tier_policy_candidates(instance, tiers, threshold_type='constant
         raise NotImplementedError
 
 def build_ACS_policy_candidates(instance, tiers, acs_bounds, acs_time_bounds, threshold_type='constant', lambda_start=None):
+    #breakpoint()
     assert len(tiers) >= 2, 'At least two tiers need to be defined'
     threshold_candidates = []
     if threshold_type == CONSTANT_TR:
@@ -168,10 +169,13 @@ def build_ACS_policy_candidates(instance, tiers, acs_bounds, acs_time_bounds, th
                 lockdown_thresholds = [[policy_params[i]] * T for i in range(len(policy_params) - 2)]
                 output_trials = [lockdown_thresholds, policy_params[-2], policy_params[-1]]
                 threshold_candidates.append(output_trials)
+       # breakpoint()
         return threshold_candidates
     else:
         raise NotImplementedError
-        
+   
+    
+    
 class MultiTierPolicy():
     '''
         A multi-tier policy allows for multiple tiers of lock-downs.
@@ -299,6 +303,7 @@ class MultiTierPolicy():
                 IH (ndarray): hospitalizations admissions, passed by the simulator
                 ** kwargs: additional parameters that are passed and are used elsewhere
         '''
+        
         if self._tier_history[t] is not None:
             return self._intervention_history[t],kwargs
         
@@ -479,8 +484,8 @@ class MultiTierPolicy_ACS():
         p_str = p_str.replace(']', '')
         p_str = p_str.replace(')', '')
         return p_str
-    
-    def __call__(self, t, criStat, IH, *args, **kwargs):
+
+    def __call__(self, t, N, criStat, IH, ToIY, *args, **kwargs):
         '''
             Function that makes an instance of a policy a callable.
             Args:
@@ -491,6 +496,7 @@ class MultiTierPolicy_ACS():
                 ** kwargs: additional parameters that are passed and are used elsewhere
         '''
         # Compute daily admissions moving average
+       # breakpoint()
         moving_avg_start = np.maximum(0, t - config['moving_avg_len'])
         if len(kwargs["acs_criStat"]) > 0:
             acs_criStat_avg = kwargs["acs_criStat"].sum((1,2))[moving_avg_start:].mean()

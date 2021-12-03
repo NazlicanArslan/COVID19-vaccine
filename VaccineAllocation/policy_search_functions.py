@@ -370,12 +370,16 @@ def trigger_policy_search(instance,
     with open(str(file_path), 'wb') as outfile:
         pickle.dump(
             (instance, interventions_train, best_params, best_policy, vaccines, stoch_replicas, 
-             best_sim, selected_vaccine_policy, cost_record, 0, config,
+             best_sim, cost_record,  config,
              (crns_out[crns_out >= 0], unique_out[unique_out >= 0])),
             outfile, pickle.HIGHEST_PROTOCOL)
     
     return stoch_replicas, best_policy, file_path
 
+
+
+    
+    
 def trigger_policy_search2(instance,
                   tiers,
                   vaccines,
@@ -454,12 +458,12 @@ def trigger_policy_search2(instance,
     with open(str(file_path), 'wb') as outfile:
         pickle.dump(
             (instance, interventions_train, best_params, best_policy, vaccines, [sim_output], 
-             best_sim, selected_vaccine_policy, cost_record, 0, config,
+             best_sim, cost_record, config,
              ([], [])),
             outfile, pickle.HIGHEST_PROTOCOL)
     
     return best_policy, file_path
-
+    
 def capacity_policy_search(instance,
                   tiers,
                   vaccines,
@@ -806,7 +810,9 @@ def capacity_policy_search(instance,
     unique_out = np.array(unique_seeds)
     with open(str(file_path), 'wb') as outfile:
         pickle.dump(
-            (instance, interventions_train, best_params, best_policy, best_sim, stoch_replicas, config, cost_record, (crns_out[crns_out >= 0], unique_out[unique_out >= 0])),
+            (instance, interventions_train, best_params, best_policy, vaccines, stoch_replicas, best_sim, cost_record, config, 
+             (crns_out[crns_out >= 0], unique_out[unique_out >= 0])),
             outfile, pickle.HIGHEST_PROTOCOL)
+    
     
     return stoch_replicas, best_policy, file_path
