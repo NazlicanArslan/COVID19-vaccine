@@ -22,7 +22,6 @@ if __name__ == '__main__':
     from objective_functions import multi_tier_objective, multi_tier_objective_ACS
     from trigger_policies import MultiTierPolicy as MTP
     from vaccine_policies import VaccineAllocationPolicy as VAP
-    from vaccine_policy_search import greedy_stochastic_allocation
     from policy_search_functions import trigger_policy_search, capacity_policy_search
     
     # Parse city and get corresponding instance
@@ -32,8 +31,8 @@ if __name__ == '__main__':
     print('train seeds', train_seeds)
     tiers = load_tiers(args.city, tier_file_name=args.t)
     #vaccines = load_vaccines(args.city, vaccine_file_name=args.v)
-    vaccines = load_vaccines(args.city, vaccine_file_name=args.v, vaccine_allocation_file_name = args.v_allocation)
-    
+    vaccines = load_vaccines(args.city, instance, vaccine_file_name=args.v, booster_file_name = args.v_boost, vaccine_allocation_file_name = args.v_allocation)
+   
     # TODO Read command line args for n_proc for better integration with crunch
     n_proc = args.n_proc
     
@@ -93,31 +92,21 @@ if __name__ == '__main__':
     selected_vaccine_policy = None
     if given_vaccine_policy_no is not False:
         if given_vaccine_policy_no == 0:
-            selected_vaccine_policy = VAP.high_risk_senior_first_vaccine_policy(instance, vaccines, 'stochastic')
+            selected_vaccine_policy = VAP.high_risk_senior_first_vaccine_policy(instance, vaccines)
         elif given_vaccine_policy_no == 1:
-            selected_vaccine_policy = VAP.senior_first_vaccine_policy(instance, vaccines, 'stochastic')
+            selected_vaccine_policy = VAP.senior_first_vaccine_policy(instance, vaccines)
         elif given_vaccine_policy_no == 2:
-            selected_vaccine_policy = VAP.min_death_vaccine_policy(instance, vaccines, 'stochastic')
+            selected_vaccine_policy = VAP.min_death_vaccine_policy(instance, vaccines)
         elif given_vaccine_policy_no == 3:
-            selected_vaccine_policy = VAP.min_infected_vaccine_policy(instance, vaccines, 'stochastic')
+            selected_vaccine_policy = VAP.min_infected_vaccine_policy(instance, vaccines)
         elif given_vaccine_policy_no == 4:
-            selected_vaccine_policy = VAP.sort_contact_matrix_vaccine_policy(instance, vaccines, 'stochastic')
+            selected_vaccine_policy = VAP.sort_contact_matrix_vaccine_policy(instance, vaccines)
         elif given_vaccine_policy_no == 5:
-            selected_vaccine_policy = VAP.no_vaccine_policy(instance, vaccines, 'stochastic')
+            selected_vaccine_policy = VAP.no_vaccine_policy(instance, vaccines)
         elif given_vaccine_policy_no == 6:
-            selected_vaccine_policy = VAP.phase_1b_policy(instance, vaccines, 'stochastic', args.percentage)
+            selected_vaccine_policy = VAP.phase_1b_policy(instance, vaccines, args.percentage)
         elif given_vaccine_policy_no == 7:
-            allocation = []
-            for id_t, supply in enumerate(vaccines.vaccine_supply):
-                for id_s, s_item in enumerate(supply):
-                    allocation_list = []
-                    for id_f, f_item in enumerate(vaccines.fixed_vaccine_allocation[id_t]):
-                        allocation_item = []
-                        allocation_item = {'proportion': f_item['proportion'], 'supply': s_item, 'which_dose': f_item['which_dose']}    
-                        allocation_list.append(allocation_item)
-                    allocation.append(allocation_list)
-            
-            selected_vaccine_policy = VAP.vaccine_policy(instance, vaccines, allocation, 'deterministic')
+            selected_vaccine_policy = VAP.vaccine_policy(instance, vaccines, 'deterministic')
             
     task_str = str(selected_policy) if selected_policy is not None else f'opt{len(tiers.tier)}'
     instance_name = f'{args.f_config[:-5]}_{args.t[:-5]}_{task_str}_{args.df_obj}_{args.v_time_increment}'

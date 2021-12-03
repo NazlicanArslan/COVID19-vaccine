@@ -173,7 +173,7 @@ def parse_arguments_acs():
                         help='Which initial solutio is used')
     parser.add_argument("-v",
                         metavar='FILENAME',
-                        default='vaccine_supply.csv',
+                        default='vaccines.json',
                         type=str,
                         help='File name where vaccine data is.')   
     parser.add_argument("-v_allocation", 
@@ -233,11 +233,12 @@ def parse_arguments_acs():
                         default=None,
                         type=int,
                         help='Vaccine policy no.')
-    parser.add_argument("-risk_meas",
-                        default = "expected_value",
+    parser.add_argument("-v_boost", 
+                        metavar = 'FILENAME',
+                        default = None,
                         type = str,
-                        help = "risk measure for stoch vaccine opt"
-                        )
+                        help = 'File name where booster dose supply and allocation data is.')
+  
     parser.add_argument("-agg", action="store_true", help='Whether to use agg for matplotlib')
     parser.add_argument("-plot", action="store_true", help='Whether to use agg for matplotlib')
     parser.add_argument("-machine", default='local', type=str, help='Whether to use agg for matplotlib')
@@ -245,7 +246,7 @@ def parse_arguments_acs():
     parser.add_argument("-gv", default=None, help='Given vaccine allocation, in the format of True or False')
     parser.add_argument("-gd", default=None, help='Given step date, in the format of year=yyyy,month=mm,day=dd, without space in between')
     parser.add_argument("-gs", default=0.1, type=float, help='Given slope for the linear threshold policy') 
-    parser.add_argument("-field", default='IYIH', type=str, help='The field selected for criterion')
+    parser.add_argument("-field", default='ToIHT', type=str, help='The field selected for criterion')
     parser.add_argument("-fo", default='[]', type=str, help='Forced out tiers before first red')
     parser.add_argument("-rl", default=1000, type=int, help='How long is the maximum length of red')
     parser.add_argument("-aftert", default='[0,1,2,3,4]', type=str, help='Tiers after first red')
