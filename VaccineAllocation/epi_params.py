@@ -189,8 +189,9 @@ class EpiSetup:
             Update parameters according for a new variant of concern. 
             Assume increase in the tranmission.
         '''
-        self.beta = self.beta0 * (1 - prev) + self.beta0 * (self.new_varaint_beta) * prev #increased transmission
-        
+        breakpoint()
+        #self.beta = self.beta0 * (1 - prev) + self.beta0 * (1.65) * prev #increased transmission         
+        self.beta = self.beta * (1 - prev) + self.beta0 * (self.new_varaint_beta) * prev #increased transmission
     @property
     def eq_mu(self):
         # A conservative estimation of hospital service rate

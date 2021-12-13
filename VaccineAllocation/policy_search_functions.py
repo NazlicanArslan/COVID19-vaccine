@@ -187,15 +187,14 @@ def trigger_policy_search(instance,
                     
                         rsq = 1 - np.sum(((np.array(IH_sim) - np.array(f_benchmark))**2))/sum((np.array(f_benchmark) - np.mean(np.array(f_benchmark)))**2)
                         print('rsq', rsq)
-                        #breakpoint()
+                 
         
                         if rsq > 0.75:
                             stoch_outputs_i.append(sample_ij)
                             crn_seeds_i.append(seed_j)
                             if len(stoch_outputs_i) == n_replicas_train:
                                 break
-                       # else:
-                        #    breakpoint()
+                 
                             
                         
                 # Save CRN seeds for all policies yet to be evaluated      
@@ -497,8 +496,9 @@ def capacity_policy_search(instance,
     co_levels = np.unique(np.append([tier['cocooning'] for tier in tiers], np.unique(fixed_CO)) + [0])
     intervention_levels = create_intLevel(sc_levels, co_levels, uniquePS)
     interventions_train = form_interventions(intervention_levels, instance.epi, instance.N)
-    t_start = instance.epi.t_start
-    
+    t_start = len(instance.real_hosp)
+    print(t_start) 
+    print(instance.cal.calendar[t_start])
     selected_vaccine_policy = vaccine_policy
     
     # Build an iterator of all the candidates to be simulated by simulate_p
@@ -590,7 +590,6 @@ def capacity_policy_search(instance,
                 n_loops = 0
                 while len(stoch_outputs_i) < n_replicas_train:
                     chunksize = 1 if mp_pool is None else mp_pool._processes
-                    chunksize = chunksize if crn_seeds == [] else n_replicas_train
                     total_train_reps += chunksize
                     n_loops += chunksize + 1 if crn_seeds == [] else 0
                     if crn_seeds == []:
@@ -690,6 +689,7 @@ def capacity_policy_search(instance,
                         found_feasible_policy = True  # Flag update, inf policies not longer accepted
                         logger.info(
                             f'\tNew feasible solution -> inf reps {infeasible_replicas} : exp. cost: {expected_cost}')
+                
             else:
                 # Policy infeasible w.r.t square root staffing rule, solution discarded.
                 logger.info(f'Discarded: {str(policy_i)}')
@@ -731,7 +731,7 @@ def capacity_policy_search(instance,
     stoch_outputs_test = []
     unique_seeds = []
     while len(stoch_outputs_test) < n_replicas_test:
-        chunksize = 4 if mp_pool is None else 4 * mp_pool._processes
+        chunksize = 1 if mp_pool is None else mp_pool._processes
         total_test_reps += chunksize
         if unique_seeds_ori == []:
             # no input seeds

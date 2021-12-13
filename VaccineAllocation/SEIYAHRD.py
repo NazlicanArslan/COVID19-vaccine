@@ -50,7 +50,14 @@ def simulate_vaccine(instance, policy, interventions, v_policy, seed=-1, **kwarg
         kwargs (dict): additional parameters that are passed to the policy function
     '''
     kwargs["acs_triggered"] = False
-    kwargs["_capacity"] = [instance.hosp_beds] * instance.T
+    if "acs_type" in kwargs.keys():
+        if kwargs["acs_type"] == "IHT":
+            kwargs["_capacity"] = [instance.hosp_beds] * instance.T
+        elif kwargs["acs_type"] == "ICU":
+            kwargs["_capacity"] = [instance.icu] * instance.T 
+    else:
+        kwargs["_capacity"] = [instance.hosp_beds] * instance.T
+ 
     T, A, L = instance.T, instance.A, instance.L
     N = instance.N
 
@@ -83,7 +90,7 @@ def simulate_vaccine(instance, policy, interventions, v_policy, seed=-1, **kwarg
        
     for t in range(T - 1):
         kwargs["acs_criStat"] = eval(kwargs["acs_policy_field"])[:t]
-        kwargs["t_start"] = instance.epi.t_start
+        kwargs["t_start"] = len(instance.real_hosp)
        
        # breakpoint()
         # Get dynamic intervention and corresponding contact matrix
@@ -164,8 +171,8 @@ def simulate_vaccine(instance, policy, interventions, v_policy, seed=-1, **kwarg
     ToIHT_temp = np.sum(ToIHT, axis=(1, 2))[:T]
     ToIY_temp = np.sum(ToIY, axis=(1, 2))[:T]
     ToIHT_moving = [ToIHT_temp[i: min(i + moving_avg_len, T)].mean() for i in range(T-moving_avg_len)]
-    ToIY_moving = [ToIY_temp[i: min(i + moving_avg_len, T)].sum()* 100000/np.sum(N, axis=(0,1)) for i in range(T-moving_avg_len)]
-       
+    ToIY_moving = [ToIY_temp[i: min(i + moving_avg_len, T)].sum()* 100000/np.sum(N, axis=(0,1)) for i in range(T-moving_avg_len)] 
+    #breakpoint()
     output = {
         'S': S,
         'E': E,
@@ -249,14 +256,13 @@ def simulate_t(instance, v_policy, policy, interventions, t_date, epi_rand, epi_
                     v_groups.delta_update(instance.delta_prev[t - T_delta])
                 epi.delta_update_param(instance.delta_prev[t - T_delta])
                 
-            #Update epi parameters for a new variant prevalence:    
-            # if epi.new_variant:
-            #     T_variant = np.where(np.array(v_policy._instance.cal.calendar) == instance.variant_start)[0][0]
-            #     if t >= T_variant:
-            #         epi.variant_update_param(instance.variant_prev[t - T_variant])        
-            
-
                
+            #Update epi parameters for a new variant prevalence:    
+            if epi.new_variant:
+                T_variant = np.where(np.array(v_policy._instance.cal.calendar) == instance.variant_start)[0][0]
+                if t >= T_variant:
+                    epi.variant_update_param(instance.variant_prev[t - T_variant])        
+                  
             if instance.otherInfo == {}:
                 if t > kwargs["rd_start"] and t <= kwargs["rd_end"]:
                     epi.update_icu_params(kwargs["rd_rate"])

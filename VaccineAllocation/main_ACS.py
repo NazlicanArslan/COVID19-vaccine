@@ -20,7 +20,7 @@ if __name__ == '__main__':
     
     from instances import load_instance, load_tiers, load_seeds, load_vaccines
     from objective_functions import multi_tier_objective, multi_tier_objective_ACS
-    from trigger_policies import MultiTierPolicy as MTP
+    from trigger_policies import MultiTierPolicy as MTP, MultiTierPolicy_ACS as MTP_ACS
     from vaccine_policies import VaccineAllocationPolicy as VAP
     from policy_search_functions import trigger_policy_search, capacity_policy_search
     
@@ -79,7 +79,7 @@ if __name__ == '__main__':
     selected_policy = None
     if tiers.tier_type == 'constant':
         if given_threshold is not None:
-            selected_policy = MTP.constant_policy(instance, tiers.tier, given_threshold)
+            selected_policy = MTP_ACS.constant_policy(instance, tiers.tier, given_threshold)
     elif tiers.tier_type == 'step':
         if (given_threshold is not None) and (given_date is not None):
             selected_policy = MTP.step_policy(instance, tiers.tier, given_threshold, given_date)
@@ -109,7 +109,7 @@ if __name__ == '__main__':
             selected_vaccine_policy = VAP.vaccine_policy(instance, vaccines, 'deterministic')
             
     task_str = str(selected_policy) if selected_policy is not None else f'opt{len(tiers.tier)}'
-    instance_name = f'{args.f_config[:-5]}_{args.t[:-5]}_{task_str}_{args.df_obj}_{args.v_time_increment}'
+    instance_name = f'{args.f_config[:-5]}_{args.t[:-5]}_{task_str}__{args.tr[:-4]}_{args.f[:-5]}'
     
     # read in the policy upper bound
     if args.pub is not None:
