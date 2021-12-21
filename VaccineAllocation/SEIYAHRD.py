@@ -15,7 +15,36 @@ from trigger_policies import MultiTierPolicy,MultiTierPolicy_ACS
 from VaccineAllocation import config
 import copy
 
+ # group 0: unvaccinated group,
+ #                 group 1: partially vaccinated, 
+ #                 group 2: fully vaccinated,    
+ #                 group 3: waning efficacy group.  
 
+def immune_escape(immune_escape_rate, t, types, v_policy):
+    '''
+        This function move recovered and vaccinated individuals to waning efficacy susceptible 
+        compartment after omicron become the prevelant virus type.
+    '''
+    breakpoint()
+    for idx, v_groups in enumerate(v_policy._vaccine_groups):
+        if types == 'int':
+            moving_people = (v_groups.R[t] *  immune_escape_rate).astype(int)
+        else:
+            moving_people = v_groups.R[t] *  immune_escape_rate
+                
+        v_groups.R[t] -=  moving_people
+        v_policy._vaccine_groups[3].S[t] +=  moving_people
+            
+        if v_groups.v_name == 'v_1' or v_groups.v_name == 'v_2':
+            if types == 'int':
+                moving_people = (v_groups.S[t] *  immune_escape_rate).astype(int)
+            else:
+                moving_people = v_groups.S[t] *  immune_escape_rate
+            
+            v_groups.S[t] -=  moving_people
+            v_policy._vaccine_groups[3].S[t] +=  moving_people
+ 
+    breakpoint()
 
 def simulate_vaccine(instance, policy, interventions, v_policy, seed=-1, **kwargs):
     '''
@@ -261,8 +290,14 @@ def simulate_t(instance, v_policy, policy, interventions, t_date, epi_rand, epi_
             if epi.new_variant:
                 T_variant = np.where(np.array(v_policy._instance.cal.calendar) == instance.variant_start)[0][0]
                 if t >= T_variant:
-                    epi.variant_update_param(instance.variant_prev[t - T_variant])        
-                  
+                    epi.variant_update_param(instance.variant_prev[t - T_variant])
+                    for v_groups in v_policy._vaccine_groups:
+                        v_groups.omicron_update(instance.delta_prev[t - T_delta])
+
+                    if t == T_variant:
+                        # Move almost half of the people from recovered to susceptible:
+                        immune_escape(epi.immune_escape_rate, t, types, v_policy)
+            
             if instance.otherInfo == {}:
                 if t > kwargs["rd_start"] and t <= kwargs["rd_end"]:
                     epi.update_icu_params(kwargs["rd_rate"])
@@ -385,17 +420,27 @@ def simulate_t(instance, v_policy, policy, interventions, t_date, epi_rand, epi_
          
             if t >= v_policy._vaccines.vaccine_start_time:
                 S_before = np.zeros((5, 2))
+      
                 for idx, v_groups in enumerate(v_policy._vaccine_groups):
                     S_before += v_groups.S[t + 1]
                 
                 for idx, v_groups in enumerate(v_policy._vaccine_groups):
                     
+                    # if t == 331:
+                    #     breakpoint()
+                        
                     out_sum = np.zeros((A, L))
                     S_out = np.zeros((10, 1))
                     N_out = np.zeros((10, 1))
                     for out_daily in v_groups.v_out:
                         if v_policy._instance.cal.calendar[t] == out_daily['time']:
                             S_out = np.array([age_risk_allocation[t] for age_risk_allocation in out_daily['daily_assignment']]).reshape((10,1))
+                            if epi.new_variant:
+                                T_variant = np.where(np.array(v_policy._instance.cal.calendar) == instance.variant_start)[0][0]
+                                if t >= T_variant:
+                                    if v_groups.v_name == "v_1" or v_groups.v_name == "v_2":
+                                        S_out = np.array([age_risk_allocation[t] for age_risk_allocation in epi.immune_escape_rate * out_daily['daily_assignment']]).reshape((10,1))
+              
                             N_out = np.array([age_risk_allocation[t] for age_risk_allocation in v_groups.N_eligible]).reshape((10,1))
                             ratio_S_N = np.array([0 if N_out[i] == 0 else float(S_out[i]/N_out[i]) for i in range(len(N_out))]).reshape((A, L)) #(S_out/N_out).reshape((5,2))                            
                             if types == 'int':
@@ -408,10 +453,18 @@ def simulate_t(instance, v_policy, policy, interventions, t_date, epi_rand, epi_
                     N_in = np.zeros((10, 1))
                     for in_daily in v_groups.v_in:
                         for v_g in v_policy._vaccine_groups:
-                            if v_g.v_name ==in_daily['from']:
+                            if v_g.v_name == in_daily['from']:
                                 v_temp = v_g        
                         if v_policy._instance.cal.calendar[t] == in_daily['time']:
                             S_in = np.array([age_risk_allocation[t] for age_risk_allocation in in_daily['daily_assignment']]).reshape((10,1))
+                            if epi.new_variant:
+                                T_variant = np.where(np.array(v_policy._instance.cal.calendar) == instance.variant_start)[0][0]
+                                if t >= T_variant:
+                                    if v_groups.v_name == "v_3" and v_temp.v_name == "v_2":
+                                        S_in = np.array([age_risk_allocation[t] for age_risk_allocation in epi.immune_escape_rate * in_daily['daily_assignment']]).reshape((10,1))
+                                    elif v_groups.v_name == "v_2" and v_temp.v_name == "v_1":
+                                        S_in = np.array([age_risk_allocation[t] for age_risk_allocation in epi.immune_escape_rate * in_daily['daily_assignment']]).reshape((10,1))
+      
                             N_in = np.array([age_risk_allocation[t] for age_risk_allocation in v_temp.N_eligible]).reshape((10,1))
                             ratio_S_N = np.array([0 if N_in[i] == 0 else float(S_in[i]/N_in[i]) for i in range(len(N_in))]).reshape((A, L)) #(S_in/N_in).reshape((5,2))
                             if types == 'int':

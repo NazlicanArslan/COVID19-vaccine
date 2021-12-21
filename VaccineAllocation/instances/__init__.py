@@ -23,7 +23,8 @@ class Instance():
         self.transmission_file = self.path_to_data / transmission_file_name
         self.hospitalization_file = self.path_to_data / hospitalization_file_name
         self.delta_prev_file = self.path_to_data / "delta_prevelance.csv"
-        self.variant_prev_file = self.path_to_data / "new_variant_prevelance.csv"
+        #self.variant_prev_file = self.path_to_data / "new_variant_prevelance.csv"
+        self.variant_prev_file = self.path_to_data / "omicron_prevelance.csv"
     
     def load_data(self):
         '''

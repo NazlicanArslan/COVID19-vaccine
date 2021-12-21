@@ -22,6 +22,7 @@ class Vaccine:
         self.tau_reduct = vaccine_data['tau_reduct'] 
         self.beta_reduct_delta = vaccine_data['beta_reduct_delta'] 
         self.tau_reduct_delta = vaccine_data['tau_reduct_delta'] 
+        self.tau_reduct_omicron = vaccine_data['tau_reduct_omicron'] 
         self.instance = instance
         self.vaccine_supply = self.define_supply(instance, vaccine_allocation_data, booster_allocation_data)
           
@@ -46,10 +47,10 @@ class Vaccine:
         '''  
         # Including vaccine groups
         self._vaccine_groups = []
-        self._vaccine_groups.append(Vaccine_group('v_0', 0, 0, 0, 0, self.instance, problem_type)) #unvax
-        self._vaccine_groups.append(Vaccine_group('v_1', self.beta_reduct[1], self.tau_reduct[1], self.beta_reduct_delta[1], self.tau_reduct_delta[1], self.instance, problem_type)) # partially vaccinated
-        self._vaccine_groups.append(Vaccine_group('v_2', self.beta_reduct[2], self.tau_reduct[2], self.beta_reduct_delta[2], self.tau_reduct_delta[2], self.instance, problem_type)) # fully vaccinated
-        self._vaccine_groups.append(Vaccine_group('v_3', self.beta_reduct[0], self.tau_reduct[0], self.beta_reduct_delta[0], self.tau_reduct_delta[0], self.instance, problem_type)) # waning efficacy
+        self._vaccine_groups.append(Vaccine_group('v_0', 0, 0, 0, 0, 0, self.instance, problem_type)) #unvax
+        self._vaccine_groups.append(Vaccine_group('v_1', self.beta_reduct[1], self.tau_reduct[1], self.beta_reduct_delta[1], self.tau_reduct_delta[1], self.tau_reduct_omicron[1], self.instance, problem_type)) # partially vaccinated
+        self._vaccine_groups.append(Vaccine_group('v_2', self.beta_reduct[2], self.tau_reduct[2], self.beta_reduct_delta[2], self.tau_reduct_delta[2], self.tau_reduct_omicron[2], self.instance, problem_type)) # fully vaccinated
+        self._vaccine_groups.append(Vaccine_group('v_3', self.beta_reduct[0], self.tau_reduct[0], self.beta_reduct_delta[0], self.tau_reduct_delta[0], self.tau_reduct_omicron[0], self.instance, problem_type)) # waning efficacy
         return self._vaccine_groups      
     
 
@@ -148,7 +149,7 @@ class Vaccine:
         #breakpoint()      
     
 class Vaccine_group:
-    def __init__(self, v_name, v_beta_reduct, v_tau_reduct, v_beta_reduct_delta, v_tau_reduct_delta, instance, problem_type):
+    def __init__(self, v_name, v_beta_reduct, v_tau_reduct, v_beta_reduct_delta, v_tau_reduct_delta, v_tau_reduct_omicron, instance, problem_type):
         '''
         Define each vaccine status as a group. Define each set of compartments for vaccine group.
         
@@ -168,6 +169,7 @@ class Vaccine_group:
         self.v_tau_reduct = v_tau_reduct
         self.v_beta_reduct_delta = v_beta_reduct_delta
         self.v_tau_reduct_delta = v_tau_reduct_delta
+        self.v_tau_reduct_omicron = v_tau_reduct_omicron
         self.v_name = v_name
     
         T, A, L = instance.T, instance.A, instance.L
@@ -365,4 +367,11 @@ class Vaccine_group:
         
         self.v_beta_reduct = self.v_beta_reduct * (1 - prev) + self.v_beta_reduct_delta * prev #decreased efficacy against infection.
         self.v_tau_reduct = self.v_tau_reduct * (1 - prev) + self.v_tau_reduct_delta * prev #decreased efficacy against symptomatic infection.    
+     
+    def omicron_update(self, prev):
+        '''
+            Update efficacy according to omicron variant (VoC) prevelance.
+        '''
+        self.v_tau_reduct = self.v_tau_reduct * (1 - prev) + self.v_tau_reduct_omicron * prev
+        #breakpoint() 
         

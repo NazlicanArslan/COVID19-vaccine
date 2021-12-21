@@ -12,7 +12,7 @@ from utils import profile_log, print_profiling_log
 from threshold_policy import run_multi_calendar, policy_multi_iterator, stoch_simulation_iterator
 from objective_functions import multi_tier_objective
 from vaccine_policies import VaccineAllocationPolicy as VAP
-from vaccine_policies import find_rollout_allocation, fix_hist_allocation
+from vaccine_policies import  fix_hist_allocation
 import iteround
 datetime_formater = '%Y-%m-%d %H:%M:%S'
 date_formater = '%Y-%m-%d'
