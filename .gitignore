@@ -21,19 +21,14 @@
 # unwanted output
 *./temp
 *mip_sol*.pdf
-InterventionsMIP/plots/*.pdf
-InterventionsMIP/plots/ICU/*.pdf
-InterventionsMIP/output/*
-InterventionsMIP/reporting/reports/*
-InterventionsMIP/reporting/temp/*
-InterventionsMIP/instances/austin/archived_data/*
-InterventionsMIP/instances/houston/archived_data/*
+VaccineAllocation/plots/*.pdf
+VaccineAllocation/output/*
+VaccineAllocation/reporting/reports/*
+VaccineAllocation/reporting/temp/*
 
 # Latex output
 *.aux
 *.log
 *./temp/*.pdf
-InterventionsMIP/plots/archive/scratch_rorange_818_IH.png
-InterventionsMIP/plots/archive/ICU_IHT.png
 *.zip
 *.zip
