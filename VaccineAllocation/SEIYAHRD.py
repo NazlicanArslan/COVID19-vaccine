@@ -25,7 +25,7 @@ def immune_escape(immune_escape_rate, t, types, v_policy):
         This function move recovered and vaccinated individuals to waning efficacy susceptible 
         compartment after omicron become the prevelant virus type.
     '''
-    breakpoint()
+    #breakpoint()
     for idx, v_groups in enumerate(v_policy._vaccine_groups):
         if types == 'int':
             moving_people = (v_groups.R[t] *  immune_escape_rate).astype(int)
@@ -44,7 +44,7 @@ def immune_escape(immune_escape_rate, t, types, v_policy):
             v_groups.S[t] -=  moving_people
             v_policy._vaccine_groups[3].S[t] +=  moving_people
  
-    breakpoint()
+    #breakpoint()
 
 def simulate_vaccine(instance, policy, interventions, v_policy, seed=-1, **kwargs):
     '''
@@ -201,7 +201,8 @@ def simulate_vaccine(instance, policy, interventions, v_policy, seed=-1, **kwarg
     ToIY_temp = np.sum(ToIY, axis=(1, 2))[:T]
     ToIHT_moving = [ToIHT_temp[i: min(i + moving_avg_len, T)].mean() for i in range(T-moving_avg_len)]
     ToIY_moving = [ToIY_temp[i: min(i + moving_avg_len, T)].sum()* 100000/np.sum(N, axis=(0,1)) for i in range(T-moving_avg_len)] 
-    #breakpoint()
+    ICU_ratio = np.sum(ICU, axis=(1, 2))[:T]/(np.sum(ICU, axis=(1, 2))[:T] + np.sum(IH, axis=(1, 2))[:T])
+  
     output = {
         'S': S,
         'E': E,
@@ -237,6 +238,7 @@ def simulate_vaccine(instance, policy, interventions, v_policy, seed=-1, **kwarg
         'ICU_unvac': ICU_unvac,
         'ToIHT_unvac': ToIHT_unvac,
         'IH_unvac': IH_unvac,
+        'ICU_ratio': ICU_ratio
         }
 
     return output
@@ -298,6 +300,11 @@ def simulate_t(instance, v_policy, policy, interventions, t_date, epi_rand, epi_
                         # Move almost half of the people from recovered to susceptible:
                         immune_escape(epi.immune_escape_rate, t, types, v_policy)
             
+            
+            #breakpoint()
+            if t >= T_variant - 12:
+                epi.change_hosp_dynamic()
+                
             if instance.otherInfo == {}:
                 if t > kwargs["rd_start"] and t <= kwargs["rd_end"]:
                     epi.update_icu_params(kwargs["rd_rate"])

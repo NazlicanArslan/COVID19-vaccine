@@ -343,10 +343,16 @@ for instance_raw in fileList:
             print("Mean ACS Utilization Rate: ", mean_util_rate)
             print("Number of paths hitting the trigger: ", acs_results[7])
             
-            print("Maximum number of days requiring ACS", np.max(acs_results[2]))
+            print("Maximum number of days requiring ACS", np.max(acs_results[2]))  
             print("95 Percentile of days requiring ACS", np.percentile(acs_results[2],95))
+            print("90 Percentile of days requiring ACS", np.percentile(acs_results[2],90))
+            print("80 Percentile of days requiring ACS", np.percentile(acs_results[2],80))
+            print("50 Percentile of days requiring ACS", np.percentile(acs_results[2],50))
             print("Maximum ACS required", np.max(acs_results[1]))
             print("95 Percentile of ACS required", np.percentile(acs_results[1],95))
+            print("90 Percentile of ACS required", np.percentile(acs_results[1],90))
+            print("80 Percentile of ACS required", np.percentile(acs_results[1],80))
+            print("50 Percentile of ACS required", np.percentile(acs_results[1],50))
             
             n_replicas = len(profiles)
             unmet_ICU = [np.sum(np.maximum(np.sum(profiles[i]['ICU'],axis = (1,2))[t_start:] - 200,0)) for i in range(len(profiles))]

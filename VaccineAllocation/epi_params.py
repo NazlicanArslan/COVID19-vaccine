@@ -192,6 +192,13 @@ class EpiSetup:
         #breakpoint()
         #self.beta = self.beta0 * (1 - prev) + self.beta0 * (1.65) * prev #increased transmission         
         self.beta = self.beta * (1 - prev) + self.beta * (self.new_variant_beta) * prev #increased transmission
+    
+    def change_hosp_dynamic(self):
+         # Update hospital dynamic parameters:
+        self.gamma_ICU = self.gamma_ICU0 *(1 + self.alpha1_omic)
+        self.mu_ICU = self.mu_ICU0 * (1 + self.alpha3_omic)
+        self.gamma_IH = self.gamma_IH0 * (1 - self.alpha2_omic)
+       
     @property
     def eq_mu(self):
         # A conservative estimation of hospital service rate
