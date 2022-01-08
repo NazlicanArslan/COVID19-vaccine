@@ -5,7 +5,6 @@
 *.env
 
 # data file
-*.p
 *.pkl
 *.mat
 *.pdf
@@ -24,7 +23,7 @@ VaccineAllocation/plots/*.pdf
 VaccineAllocation/output/*
 VaccineAllocation/reporting/reports/*
 VaccineAllocation/reporting/temp/*
-
+VaccineAllocation/instances/austin/archieved/*
 # Latex output
 *.aux
 *.log
