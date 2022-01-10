@@ -1,39 +1,49 @@
-city = 'austin'
-seeds_file_name = 'seed.p'
 from pathlib import Path
-
+import os
+import pickle
+city = 'austin'
 instances_path = Path(__file__).parent
 
-import pickle
+
+#To get path of the output directiory file
+path_file=''
+if __name__ == "__main__":
+     # list all .p files from the output folder
+     fileList = os.listdir("/Users/kevinli/Downloads/COVID19_CAOE/VaccineAllocation/output")
+     for instance_raw in fileList:
+         if ".p" in instance_raw:
+             if "austin" in instance_raw:
+                 instance_name = instance_raw[:-2]
+                 path_file = f'output/{instance_name}.p'
 
 
 # use this when we generate new seeds and want to write just seeds array
 def write_seeds(city, seeds_file_name='seeds.p'):
-    # read in the seeds file
-    seedsinput = instances_path
-    #breakpoint()
-    print(seedsinput / seeds_file_name)
+    seedsinput_old=instances_path.parent  
+    seedsinput=instances_path          
+    print(seedsinput_old / seeds_file_name)
     try:
-        with open(seedsinput / seeds_file_name, 'rb') as infile:
+        with open(seedsinput_old / path_file, 'rb') as infile:
             seeds_data = pickle.load(infile)
             file_path = seedsinput / 'new_seed.p'
             with open(str(file_path), 'wb') as outfile:
-                pickle.dump(((seeds_data[-1][0], seeds_data[-1][1]  )), 
+                pickle.dump(((seeds_data[-1][0], seeds_data[-1][1])), 
                             outfile, pickle.HIGHEST_PROTOCOL)
-        
         print(seeds_data[-1][0], seeds_data[-1][1]  )
         return seeds_data[-1][0], seeds_data[-1][1]    
-        #return seeds_data['training'], seeds_data['testing']
     except:
         return [],[]
+
+
 
 seeds_input_file_name='new_seed.p'
 def load_seeds(city, seeds_file_name='newseed.p'):
     # read in the seeds file
-    seedsinput = instances_path
-    print(seedsinput / seeds_file_name)
+    seedsinput_old=instances_path.parent  
+    seedsinput=instances_path          
+    print(seedsinput_old / seeds_file_name)
     try:
-        with open(seedsinput / seeds_file_name, 'rb') as infile:
+        with open(seedsinput_old / seeds_file_name, 'rb') as infile:
             seeds_data = pickle.load(infile)
 
         return seeds_data[0], seeds_data[1]    
@@ -42,5 +52,9 @@ def load_seeds(city, seeds_file_name='newseed.p'):
         return [],[]
     
     
-write_seeds(city, seeds_file_name)
-#print(load_seeds(city, seeds_input_file_name))
+
+write_seeds(city, path_file)
+
+
+
+                
