@@ -9,13 +9,15 @@ Repository for COVID19 response models of CAOE team.
 - Download the code to your local path (e.g., .../COVID19-vaccine)
 
 - Add both /COVID19-vaccine and /COVID19-vaccine/VaccineAllocation to your $PYTHONPATH
-- ss
+
 
 ## Structure of the Code
 
 ## main_allocation.py
 
 - The main module to run the simulation.
+
+## aa.bpy.
 
 ### policy_search_functions.py
 
