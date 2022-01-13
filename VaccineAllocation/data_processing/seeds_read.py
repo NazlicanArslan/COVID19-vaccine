@@ -4,12 +4,13 @@ import pickle
 city = 'austin'
 instances_path = Path(__file__).parent
 
-
 #To get path of the output directiory file
 path_file=''
+
 if __name__ == "__main__":
      # list all .p files from the output folder
-     fileList = os.listdir("/Users/kevinli/Downloads/COVID19_CAOE/VaccineAllocation/output")
+     path = instances_path.parent / 'output'
+     fileList = os.listdir(path)
      for instance_raw in fileList:
          if ".p" in instance_raw:
              if "austin" in instance_raw:
