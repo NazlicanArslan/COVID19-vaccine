@@ -24,8 +24,8 @@ import csv
 
 plt.rcParams['hatch.linewidth'] = 3.0
 
-colors = {'S': 'b', 'E': 'y', 'IA': 'c', 'IY': 'm', 'IH': 'k', 'R': 'g', 'D': 'k', 'ToIHT': 'teal', 'ToIHT_moving': 'teal', 'ToIA': 'teal', 'ToIY_moving': 'teal','ToIHT_unvac': 'teal', 'ToIHT_vac': 'teal', 'ICU': 'k', 'ToICU': 'teal', 'IHT': 'k', 'ITot': 'k'}
-light_colors = {'IH':'silver','ToIHT':'paleturquoise', 'ToIHT_moving':'paleturquoise', 'ToIHT_unvac':'paleturquoise', 'ToIHT_unvac':'paleturquoise','ToIA':'paleturquoise', 'ToIY_moving': 'paleturquoise', 'ICU':'silver', 'ToICU': 'paleturquoise', 'IHT': 'silver', 'ITot': 'silver'}
+colors = {'S': 'b', 'E': 'y', 'IA': 'c', 'IY': 'm', 'IH': 'k', 'R': 'g', 'D': 'k', 'ToIHT': 'teal', 'ToIHT_moving': 'teal', 'ToIA': 'teal', 'ToIY_moving': 'teal','ToIHT_unvac': 'teal', 'ToIHT_vac': 'teal', 'ICU': 'k', 'ICU_ratio': 'k','ToICU': 'teal', 'IHT': 'k', 'ITot': 'k'}
+light_colors = {'IH':'silver','ToIHT':'paleturquoise', 'ToIHT_moving':'paleturquoise', 'D': 'teal', 'ToIHT_unvac':'paleturquoise', 'ToIHT_unvac':'paleturquoise','ToIA':'paleturquoise', 'ToIY_moving': 'paleturquoise', 'ICU':'silver', 'ICU_ratio':'silver','ToICU': 'paleturquoise', 'IHT': 'silver', 'ITot': 'silver'}
 l_styles = {'sim': '-', 'opt': '--'}
 compartment_names = {
     'ITot': 'Total Infectious',
@@ -41,7 +41,8 @@ compartment_names = {
     'ToIA': 'Daily COVID-19 IA Admissions',
     'ToIY_moving': 'COVID-19 New Symptomatic Cases per 100k \n(Seven-day Sum)',
     'ToIHT_unvac': 'COVID-19 Hospitalizations (Unvax)',
-    'ToIHT_vac': 'COVID-19 Hospitalizations (Vax)'
+    'ToIHT_vac': 'COVID-19 Hospitalizations (Vax)',
+    'ICU_ratio': 'ICU to hospitalization census ratio'
 }
 
 def colorDecide(u,tier_by_tr):
@@ -232,7 +233,7 @@ def plot_multi_tier_sims(instance_name,
     last_day_hosp_data = len(real_hosp) - 1
     lb_hosp = real_hosp[-1] * (1 - config['div_filter_frac'])
     ub_hosp = real_hosp[-1] * (1 + config['div_filter_frac'])
-    if 'ToIHT_moving' in states_to_plot or 'ToIY_moving' in states_to_plot:
+    if 'ToIHT_moving' in states_to_plot or 'ToIY_moving' in states_to_plot or  'ICU_ratio' in states_to_plot:
         states_ts = {v: np.vstack(list(p[v][:T] for p in profiles)) for v in states_to_plot}
     else:
         states_ts = {v: np.vstack(list(np.sum(p[v], axis=(1, 2))[:T] for p in profiles)) for v in states_to_plot}
@@ -246,7 +247,7 @@ def plot_multi_tier_sims(instance_name,
     states_to_plot_temp = ['IHT', 'ToIHT', 'ICU', 'D', 'ToIA', 'ToIY','ToIHT_moving', 'ToIY']
     
     for cap in [200, 175, 150]:
-        ICU_cap_exceed = sum(1 for p in profiles if any(val> cap for val in np.sum(p['ICU'], axis=(1, 2))[t_start:T])) 
+        ICU_cap_exceed = sum(1 for p in profiles if any(val> cap for val in np.sum(p['ICU'], axis=(1, 2))[t_start:t_start+40])) 
         print('number of paths that exceed icu capacity of ', cap, ICU_cap_exceed/3)
     print(instance.cal.calendar[t_start])
     print('')
@@ -256,9 +257,9 @@ def plot_multi_tier_sims(instance_name,
     print("Printed seed is: ", profiles[0]["seed"])
     #print(p[0]['tier_history'])
     # print('t_start', instance.cal.calendar[t_start])
-    spikes = sum(1 for p in profiles if (any(val == 0 for val in p['tier_history'][t_start:t_start+64]) and any(val == 4 for val in p['tier_history'][t_start:t_start+64]))) 
-    print('green spikes', spikes)
-    print(instance.cal.calendar[t_start+64])
+    # spikes = sum(1 for p in profiles if (any(val == 0 for val in p['tier_history'][t_start:t_start+64]) and any(val == 4 for val in p['tier_history'][t_start:t_start+64]))) 
+    # print('green spikes', spikes)
+    #print(instance.cal.calendar[t_start+64])
     i = -1
     for p in profiles:
         i += 1
@@ -351,6 +352,7 @@ def plot_multi_tier_sims(instance_name,
     # policy = {(m, y): lockdown_threshold[fdmi[m, y]] for (m, y) in fdmi if fdmi[m, y] < T}
     # print('Lockdown Threshold:')
     # print(policy)
+   
     hide = 1
     l_style = l_styles['sim']
     for v in plot_left_axis:
@@ -361,8 +363,8 @@ def plot_multi_tier_sims(instance_name,
             plotted_lines.append(v_a[0])
             v_aa = ax1.plot(all_st[v].T * bed_scale, c=light_colors[v], linestyle=l_style, linewidth=1, label=label_v, alpha=0.8 * hide)
             plotted_lines.append(v_aa[0])
-        #if central_path != 0:
-        #    ax1.fill_between(range(len(max_st[v])),
+        # if central_path != 0:
+        #     ax1.fill_between(range(len(max_st[v])),
         #                     max_st[v],
         #                     min_st[v],
         #                     color=colors[v],
@@ -371,8 +373,8 @@ def plot_multi_tier_sims(instance_name,
         #                     linewidth=0.0,
         #                     alpha=0.5 * hide)
         if v == 'ICU':
-            ax1.hlines(200, 0, T, color='k', linestyle='-', linewidth=3 )
-        if v == 'IH' or v == 'ICU' or v == 'IHT' or v == 'ITot':
+            ax1.hlines(150, 0, T, color='k', linestyle='-', linewidth=3 )
+        if v == 'IH' or v == 'ICU' or v == 'IHT' or v == 'ITot' or v == 'ICU_ratio':
             real_h_plot = ax1.scatter(range(len(real_hosp_or_icu)), real_hosp_or_icu, color='maroon', label='Actual hospitalizations',zorder=100,s=15)
             max_y_lim_1 = np.maximum(roundup(np.max(hosp_beds_list), 100), max_y_lim_1)
             try:
@@ -388,6 +390,7 @@ def plot_multi_tier_sims(instance_name,
                             ax1.hlines(hosp_beds_lines, 0, T, color='k', linestyle='-', linewidth=3)
                 else:
                     if icu_cap_bool:
+                          
                         ax1.plot(profiles[cap_path_id]['capacity'][:T], color='k', linestyle='-', linewidth=3)
                     else:
                         for hosp_beds_lines in hosp_beds_list:
@@ -688,7 +691,7 @@ def plot_multi_tier_sims(instance_name,
                 else:
                     u_color,u_label = colorDecide(u,tier_by_tr)
                 u_alpha = 0.6
-                if policy.tier_type == 'constant':
+                if 'constant' == 'constant': # policy.tier_type 
                     u_lb = policy.lockdown_thresholds[ti][0]
                     u_ub = policy.lockdown_thresholds_ub[ti][0]
                     #breakpoint()
@@ -1124,6 +1127,8 @@ def stack_plot(instance_name,
         #                     facecolor="none",
         #                     linewidth=0.0,
         #                     alpha=0.5 * hide)
+        if v == 'ICU':
+            ax1.hlines(150, 0, T, color='k', linestyle='-', linewidth=3 )
         if v == 'IH' or v == 'ICU' or v == 'IHT':
             real_h_plot = ax1.scatter(range(len(real_hosp_or_icu)), real_hosp_or_icu, color='maroon', label='Actual hospitalizations',zorder=100,s=15)
             max_y_lim_1 = np.maximum(roundup(np.max(hosp_beds_list), 100), max_y_lim_1)
@@ -1131,8 +1136,9 @@ def stack_plot(instance_name,
                 if v == 'IH' or v == 'IHT':
                     ax1.plot(profiles[0]['capacity'][:T], color='k', linestyle='-', linewidth=3)
                 else:
+
                     for hosp_beds_lines in hosp_beds_list:
-                        ax1.hlines(hosp_beds_lines, 0, T, color='k', linestyle='-', linewidth=3)
+                        ax1.hlines(150, 0, T, color='k', linestyle='-', linewidth=3)
             except:
                 for hosp_beds_lines in hosp_beds_list:
                     ax1.hlines(hosp_beds_lines, 0, T, color='k', linestyle='-', linewidth=3)

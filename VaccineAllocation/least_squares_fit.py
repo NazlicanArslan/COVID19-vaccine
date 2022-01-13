@@ -77,31 +77,33 @@ def residual_error(x_beta, **kwargs):
              0.787752,
              0.641986,
              0.827015,
+             0.827015,
              0.778334,
              0.752980,
              0.674321,
              0.801538,
              0.811144,
-            x_beta[0],
-            x_beta[1],
-            x_beta[2],
-            x_beta[3],
-            x_beta[4]]
+             0.6849,
+             0.5551,
+             0.6446,
+             0.6869,
+             0.55]
     
     cocoon = [0,
               0.787752,
               0.787752,
               0.827015,
               0.827015,
+              0.827015,
               0.787752,
               0.827015,
               0.801538,
               0.811144,
-              x_beta[0],
-              x_beta[1],
-              x_beta[2],
-              x_beta[3],
-              x_beta[4]]
+              0.6849,
+              0.5551,
+              0.6446,
+              0.6869,
+              0.55]
 
     tr_reduc = []
     date_list = []
@@ -170,10 +172,10 @@ def residual_error(x_beta, **kwargs):
     
     # Define additional variables included in the fit
     
-    instance.epi.alpha1_delta = x_beta[5]
-    instance.epi.alpha2_delta = x_beta[6]
-    instance.epi.alpha3_delta = x_beta[7]
-    instance.epi.alpha4_delta= x_beta[8]
+    instance.epi.alpha1_omic = x_beta[0]
+    instance.epi.alpha2_omic = x_beta[1]
+    instance.epi.alpha3_omic = x_beta[2]
+    instance.epi.alpha4_omic= x_beta[3]
     
     print('new value: ', x_beta)
     selected_vaccine_policy.reset_vaccine_history(instance, -1)
@@ -219,22 +221,22 @@ def residual_error(x_beta, **kwargs):
         residual_error_IYIH = [element * w_iyih for element in residual_error_IYIH]
         residual_error_IH.extend(residual_error_IYIH)
         
-        # w_d = w_iyih*5
-        # daily_death_benchmark = [sim_output['D'][t+1].sum() - sim_output['D'][t].sum() for t in range(379, len(instance.cal.real_hosp) - 1)] 
-        # daily_death_benchmark.insert(0, 0)
-        # daily_death_benchmark = [sim_output['ToICUD'][t].sum() for t in range(len(instance.cal.real_hosp) - 1)] 
-        # daily_death_benchmark.insert(0, 0)
-        # residual_error_death = [a_i - b_i for a_i, b_i in zip(real_death_from_hosp[379:], daily_death_benchmark)]
-        # residual_error_death = [element * w_d for element in residual_error_death]
-        # residual_error_IH.extend(residual_error_death)     
+        w_d = w_iyih*5
+        daily_death_benchmark = [sim_output['D'][t+1].sum() - sim_output['D'][t].sum() for t in range(379, len(instance.cal.real_hosp) - 1)] 
+        daily_death_benchmark.insert(0, 0)
+        daily_death_benchmark = [sim_output['ToICUD'][t].sum() for t in range(len(instance.cal.real_hosp) - 1)] 
+        daily_death_benchmark.insert(0, 0)
+        residual_error_death = [a_i - b_i for a_i, b_i in zip(real_death_from_hosp[379:], daily_death_benchmark)]
+        residual_error_death = [element * w_d for element in residual_error_death]
+        residual_error_IH.extend(residual_error_death)     
         
-        # w_iyd = w_d
-        # real_toIYD = [a_i - b_i for a_i, b_i in zip(real_death_total, real_death_from_hosp)]
-        # daily_toIYD_benchmark = [sim_output['ToIYD'][t].sum() for t in range(379, len(instance.cal.real_hosp) - 1)] 
-        # daily_death_benchmark.insert(0, 0)
-        # residual_error_death = [a_i - b_i for a_i, b_i in zip(real_toIYD[379:], daily_toIYD_benchmark)]
-        # residual_error_death = [element * w_iyd for element in residual_error_death]
-        # residual_error_IH.extend(residual_error_death)  
+        w_iyd = w_d
+        real_toIYD = [a_i - b_i for a_i, b_i in zip(real_death_total, real_death_from_hosp)]
+        daily_toIYD_benchmark = [sim_output['ToIYD'][t].sum() for t in range(379, len(instance.cal.real_hosp) - 1)] 
+        daily_death_benchmark.insert(0, 0)
+        residual_error_death = [a_i - b_i for a_i, b_i in zip(real_toIYD[379:], daily_toIYD_benchmark)]
+        residual_error_death = [element * w_iyd for element in residual_error_death]
+        residual_error_IH.extend(residual_error_death)  
     #breakpoint()
     print('residual error:', )
     return residual_error_IH 
@@ -244,8 +246,8 @@ def least_squares_fit(initial_guess, kwargs):
     # Function that runs the least squares fit
     result = least_squares(residual_error,
                            initial_guess,
-                           bounds = ([0, 0, 0, 0, 0, 0, 0, 0, 0],
-                                     [1, 1, 1, 1, 1, 1, 1, 2, 1]),
+                           bounds = ([0, 0, 0, 0],
+                                     [10, 1, 10, 1]),
                            method='trf', verbose=2,
                            kwargs = kwargs)
     return result 
@@ -304,11 +306,12 @@ def run_fit(instance,
                         dt.date(2021, 7, 31),
                         dt.date(2021, 8, 22),
                         dt.date(2021, 9, 17),
-                        dt.date(2021, 10, 25)] 
+                        dt.date(2021, 10, 25),
+                        dt.date(2022, 1, 3)] 
 
         #initial guess 0.1,
-        x = np.array([0.8, 0.55, 0.55, 0.74, 0.75, 0.1, 1, 0.1, 0.003])       
-    
+        x = np.array([0.2, 0.3, 3.5, 0.003])       
+   
     selected_vaccine_policy = VAP.vaccine_policy(instance, vaccines, 'deterministic')
     
     kwargs  = {'change_dates' : change_dates,
@@ -329,35 +332,37 @@ def run_fit(instance,
     ########## ########## ##########
     #Get variable value
     opt_tr_reduction = res.x
-    contact_reduction = np.array([ 0.052257,
-                                  0.787752,
-                                  0.641986,
-                                  0.827015,
-                                  0.778334,
-                                  0.752980,
-                                  0.674321,
-                                  0.801538,
-                                  0.811144,
-                                  opt_tr_reduction[0],
-                                  opt_tr_reduction[1],
-                                  opt_tr_reduction[2],
-                                  opt_tr_reduction[3],
-                                  opt_tr_reduction[4]])
+    contact_reduction = np.array([  0.052257,
+             0.787752,
+             0.641986,
+             0.827015,
+             0.827015,
+             0.778334,
+             0.752980,
+             0.674321,
+             0.801538,
+             0.811144,
+             0.6849,
+             0.5551,
+             0.6446,
+             0.6869,
+             0.55])
     
-    cocoon = [0,
+    cocoon = np.array([0,
               0.787752,
               0.787752,
+              0.827015,
               0.827015,
               0.827015,
               0.787752,
               0.827015,
               0.801538,
               0.811144,
-              opt_tr_reduction[0],
-              opt_tr_reduction[1],
-              opt_tr_reduction[2],
-              opt_tr_reduction[3],
-              opt_tr_reduction[4]]
+              0.6849,
+              0.5551,
+              0.6446,
+              0.6869,
+              0.55])
                                                                                 
     betas = instance.epi.beta*(1 - (contact_reduction))
     end_date = []
@@ -369,10 +374,10 @@ def run_fit(instance,
     table = pd.DataFrame({'start_date': change_dates[:-1], 'end_date': end_date, 'contact_reduction': contact_reduction, 'beta': betas, 'cocoon': cocoon})
     print(table)
     
-    print('alpha1_delta=', opt_tr_reduction[5])
-    print('alpha2_delta=', opt_tr_reduction[6])
-    print('alpha3_delta=', opt_tr_reduction[7])
-    print('alpha4_delta=', opt_tr_reduction[8])
+    print('alpha1_omic=', opt_tr_reduction[0])
+    print('alpha2_omic=', opt_tr_reduction[1])
+    print('alpha3_omic=', opt_tr_reduction[2])
+    print('alpha4_omic=', opt_tr_reduction[3])
     
     #Save optimized values to transmission_new.csv
     tr_reduc = []
@@ -388,9 +393,3 @@ def run_fit(instance,
 
     return df_transmission
  
-    
-#runfile('/Users/ozgesurer/Desktop/COVID19_CAOE/InterventionsMIP/main_least_squares.py', 
-#        'austin -f setup_data_Final_lsq.json -t tiers5_opt_Final.json -train_reps 1 -test_reps 1 -f_config austin_test_IHT.json -n_proc 1 -gt [-1,0,5,20,50] -tr transmission_Final_lsq.csv -hos austin_real_hosp_lsq.csv')
-    
-# runfile('/Users/ozgesurer/Desktop/COVID19_CAOE/InterventionsMIP/main_least_squares.py', 
-#'houston -f setup_data_Final_lsq.json -t tiers5_opt_Final.json -train_reps 1 -test_reps 1 -f_config houston_test_IHT.json -n_proc 1 -gt [-1,0,5,20,50] -tr transmission_Final_lsq.csv -hos houston_real_hosp_lsq.csv')

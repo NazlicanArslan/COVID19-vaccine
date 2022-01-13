@@ -24,102 +24,6 @@ def read_hosp(file_path, start_date, typeInput="hospitalized"):
         real_hosp = [0] * (df_hosp['date'][0] - start_date).days + list(df_hosp[typeInput])
     
     return real_hosp
-
-def multi_tier_pipeline(file_path, instance_name, real_hosp=None, real_admit=None, hosp_beds_list=None, to_email=None):
-    
-    # Read data
-    with open(file_path, 'rb') as outfile:
-        read_output = pickle.load(outfile)
-    instance, interventions, best_params, best_policy, best_sim, profiles, config, cost_record, seeds_info = read_output
-    
-    # Get only desired profiles
-    if real_hosp is None:
-        real_hosp = instance.cal.real_hosp
-    last_day_hosp_data = len(real_hosp) - 1
-    lb_hosp = real_hosp[-1] * (1 - config['div_filter_frac'])
-    ub_hosp = real_hosp[-1] * (1 + config['div_filter_frac'])
-    profiles = [p for p in profiles]
-    # if config['det_history']:
-    #     profiles = [p for p in profiles]
-    # else:
-    #     profiles = [p for p in profiles if lb_hosp < np.sum(p['IH'][last_day_hosp_data]) < ub_hosp or p['seed'] == -1]
-    n_replicas = len(profiles)
-    T = np.minimum(instance.T, instance.T)  #229
-    IHD_plot = plot_multi_tier_sims(instance_name,
-                                    instance,
-                                    best_policy,
-                                    profiles, ['sim'] * len(profiles),
-                                    real_hosp,
-                                    plot_left_axis=['IH'],
-                                    plot_right_axis=[],
-                                    T=T,
-                                    interventions=interventions,
-                                    show=True,
-                                    align_axes=True,
-                                    plot_triggers=False,
-                                    plot_trigger_annotations=False,
-                                    plot_legend=False,
-                                    y_lim=None,
-                                    policy_params=best_params,
-                                    n_replicas=n_replicas,
-                                    config=config,
-                                    hosp_beds_list=hosp_beds_list,
-                                    real_new_admission=real_admit)
-    
-    IYIH_plot = plot_multi_tier_sims(instance_name,
-                                     instance,
-                                     best_policy,
-                                     profiles, ['sim'] * len(profiles),
-                                     real_hosp,
-                                     plot_left_axis=['IYIH'],
-                                     plot_right_axis=[],
-                                     T=T,
-                                     interventions=interventions,
-                                     show=True,
-                                     align_axes=False,
-                                     plot_triggers=True,
-                                     plot_trigger_annotations=False,
-                                     plot_legend=False,
-                                     y_lim=None,
-                                     policy_params=best_params,
-                                     n_replicas=n_replicas,
-                                     config=config,
-                                     hosp_beds_list=hosp_beds_list,
-                                     real_new_admission=real_admit)
-    D_plot =   plot_multi_tier_sims(instance_name,
-                                     instance,
-                                     best_policy,
-                                     profiles, ['sim'] * len(profiles),
-                                     real_hosp,
-                                     plot_left_axis=['D'],
-                                     plot_right_axis=[],
-                                     T=T,
-                                     interventions=interventions,
-                                     show=True,
-                                     align_axes=False,
-                                     plot_triggers=True,
-                                     plot_trigger_annotations=False,
-                                     plot_legend=False,
-                                     y_lim=None,
-                                     policy_params=best_params,
-                                     n_replicas=n_replicas,
-                                     config=config,
-                                     hosp_beds_list=hosp_beds_list,
-                                     real_new_admission=real_admit)
-    
-    build_report(instance_name,
-                  instance,
-                  best_policy,
-                  profiles,
-                  IHD_plot,
-                  IYIH_plot,
-                  to_email=to_email,
-                  T=T,
-                  hosp_beds=instance.hosp_beds,
-                  interventions=interventions,
-                  policy_params=best_params,
-                  n_replicas=n_replicas,
-                  config=config)
     
 def icu_pipeline(file_path, instance_name, real_hosp=None, real_admit=None, hosp_beds_list=None, icu_beds_list=None, real_icu=None, 
                  iht_limit=None, icu_limit=None, toiht_limit=None, toicu_limit=None, t_start = -1, to_email=None, is_representative_path_bool=False,
@@ -130,53 +34,33 @@ def icu_pipeline(file_path, instance_name, real_hosp=None, real_admit=None, hosp
     with open(file_path, 'rb') as outfile:
         read_output = pickle.load(outfile)
     instance, interventions, best_params, best_policy, vaccines, profiles, sim_output, expected_cost, config, seeds_info = read_output
-    #instance, interventions, sim_output, best_params, best_policy, vaccines, best_sim, selected_vaccine_policy, expected_cost, no_simulation_run, config = read_output
-    print('expected cost', expected_cost)
-    print('t_starts', t_start)
-     #(instance, interventions_train, kwargs_j, policy_j, vaccines, stoch_replicas, sim_output,
-     #        selected_vaccine_policy, expected_cost, no_simulation_run, config,
-     #        (crn_seeds, unique_seeds))
+
     # Get only desired profiles
     if real_hosp is None:
         real_hosp = instance.cal.real_hosp
     last_day_hosp_data = len(real_hosp) - 1
     lb_hosp = real_hosp[-1] * (1 - config['div_filter_frac'])
     ub_hosp = real_hosp[-1] * (1 + config['div_filter_frac'])
-    
-    #profiles_old = profiles
-    #profiles = []
-    #profiles.append(sim_output)
-    
-    #profiles = sim_output
+   
     profiles = [p for p in profiles]
-    
-    # if config['det_history']:
-    #     profiles = [p for p in profiles]
-    # else:
-    #     profiles = [p for p in profiles if lb_hosp < np.sum(p['IH'][last_day_hosp_data]) < ub_hosp or p['seed'] == -1]
+
     n_replicas = len(profiles)
-    T = np.minimum(instance.T, instance.T)  #229
+    T = np.minimum(instance.T, instance.T)  
     
     plot_trigger_ToICU = False
     plot_trigger_ToIHT = False
     plot_trigger_ICU = False
     plot_trigger_ToIHT = True
-    # if best_params['policy_field'] == 'ToIHT':
-    #     plot_trigger_ToIHT = True
-    # elif best_params['policy_field'] == 'ToICU':
-    #     plot_trigger_ToICU = True
-    # elif best_params['policy_field'] == 'ICU':
-    #     plot_trigger_ICU = True
         
     icu_beds_list = [instance.icu]
-    
+    real_icu_ratio = [real_icu[i]/(real_hosp[i]) for i in range(len(real_icu))  if real_hosp[i] != 0]
     # plot the IHT comparison
     IHD_plot = plot_multi_tier_sims(instance_name,
                             instance,
                             best_policy,
                             profiles, ['sim'] * len(profiles),
                             real_icu,
-                            plot_left_axis=['ICU'],
+                            plot_left_axis=['ICU_ratio'],
                             plot_right_axis=[],
                             T=T,
                             interventions=interventions,
@@ -185,14 +69,14 @@ def icu_pipeline(file_path, instance_name, real_hosp=None, real_admit=None, hosp
                             plot_triggers=plot_trigger_ICU,
                             plot_trigger_annotations=False,
                             plot_legend=False,
-                            y_lim=icu_limit,
+                            y_lim=1,
                             policy_params=best_params,
                             n_replicas=n_replicas,
                             config=config,
                             hosp_beds_list= icu_beds_list,
                             real_new_admission=real_admit,
                             real_new_admission_unvax = None,
-                            real_hosp_or_icu=real_icu,
+                            real_hosp_or_icu=real_icu_ratio,
                             t_start = t_start,
                             is_representative_path=is_representative_path_bool,
                             central_path_id = central_id_path,
@@ -471,7 +355,7 @@ def icu_pipeline(file_path, instance_name, real_hosp=None, real_admit=None, hosp
     #                         plot_triggers=plot_trigger_ToIHT,
     #                         plot_trigger_annotations=False,
     #                         plot_legend=False,
-    #                         y_lim=toiht_limit,
+    #                         y_lim=5000,
     #                         policy_params=best_params,
     #                         n_replicas=n_replicas,
     #                         config=config,
@@ -549,40 +433,16 @@ def icu_pipeline(file_path, instance_name, real_hosp=None, real_admit=None, hosp
         hosp_beds_list = [instance.hosp_beds]
     if icu_beds_list is None:
         icu_beds_list = [instance.icu]
-    # build_report_tiers(instance_name,
-    #                    instance,
-    #                    best_policy,
-    #                    profiles,
-    #                    IHD_plot2,
-    #                    IYIH_plot2,
-    #                    IHD_plot,
-    #                    IHT_stacked_plot,
-    #                    config=config,
-    #                    T=T,
-    #                    hosp_beds=hosp_beds_list[0],
-    #                    icu_beds=icu_beds_list[0],
-    #                    interventions=interventions,
-    #                    policy_params=best_params,
-    #                    stat_start=instance.cal.calendar[t_start+1]
-    #                    )
 
 if __name__ == "__main__":
     # list all .p files from the output folder
-    folder_name = "Final_Tests"
-    #fileList = os.listdir("output/{}".format(folder_name))
     fileList = os.listdir("output")
     for instance_raw in fileList:
         if ".p" in instance_raw:
-            if "11_1" in instance_raw and "11_13" not in instance_raw:
-                end_history = dt(2020,11,1)
-            elif "10_1" in instance_raw:
-                end_history = dt(2020,7,27)
-            else:
-                end_history = dt(2020,11,13)
             if "austin" in instance_raw:
                 file_path = "instances/austin/austin_real_hosp_updated.csv"
                 start_date = dt(2020,2,28)
-                end_history = dt(2021,11,24)
+                end_history = dt(2022,1,3)
                 real_hosp = read_hosp(file_path, start_date)
                 hosp_beds_list = None
                 file_path = "instances/austin/austin_hosp_ad_updated.csv"
@@ -598,37 +458,10 @@ if __name__ == "__main__":
                 hosp_beds_list = [1100]
                 icu_beds_list = None
                 t_start =(end_history - start_date).days
-                central_id_path = 0
+                central_id_path = 24
                 acs_type = 'ICU'
-            elif "houston" in instance_raw:
-                file_path = "instances/houston/houston_real_hosp_updated.csv"
-                start_date = dt(2020,2,19)
-                real_hosp = read_hosp(file_path, start_date)
-                hosp_beds_list = None
-                file_path = "instances/houston/houston_real_icu_updated.csv"
-                real_icu = read_hosp(file_path, start_date)
-                hosp_ad = None
-                if "tiers1" in instance_raw:
-                    hosp_beds_list = [4500,9000,13500]
-                else:
-                    hosp_beds_list = None
-                hosp_ad = None
-                iht_limit = 6000
-                icu_limit = 3000
-                toiht_limit = 700
-                toicu_limit = 200
-                hosp_beds_list = [4500]
-                icu_beds_list = [1000]
-                t_start = (end_history - start_date).days
-                central_id_path = 65
-                acs_type = 'IHT'
                 
             instance_name = instance_raw[:-2]
-            #path_file = f'output/{folder_name}/{instance_name}.p'
             path_file = f'output/{instance_name}.p'
-            #multi_tier_pipeline(path_file, instance_name, real_hosp, hosp_ad, hosp_beds_list)
             icu_pipeline(path_file, instance_name, real_hosp, hosp_ad, hosp_beds_list, icu_beds_list, real_icu,
                           iht_limit, icu_limit, toiht_limit, toicu_limit, t_start, None, False, central_id_path, central_id_path, acs_type)
-# fitted_ratio = ICUList/(ICUList + IHList)
-# plt.plot(fitted_ratio[:150])
-# plt.scatter(list(range(len(real_ratio))),real_ratio,color="crimson")
