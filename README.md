@@ -12,7 +12,7 @@ Repository for COVID19 response models of CAOE team.
 
 ## Structure of the Code
 
-### main_allocation.py
+## main_allocation.py
 
 - The main module to run the simulation.
 
