@@ -25,8 +25,10 @@ Repository for COVID-19 response models of CAOE team.
 ## Structure of the Code
 
 ## Config Directory 
+- Contains configuration files necessary to initialize running a sample path
 
-## Data_processing directory 
+## Data Processing directory 
+- Contains death data, hospitalization, code cleaning, and seed generation files 
 
 ## Instances directory
 - Contains related input .csv and .json files such as Omicron prevalence and hospitalization data 
@@ -35,8 +37,10 @@ Repository for COVID-19 response models of CAOE team.
 - Used to store output files from Crunch. These files will be used in seed generation or plot generation
 
 ## main_allocation.py
-
 - The main module to run the simulation.
+- Running a sample path in main_allocation.py
+  -  runfile('... /COVID19-vaccine-main/VaccineAllocation/main_allocation.py', 'austin -f setup_data_Final.json -t tiers5_opt_Final.json -train_reps 0 -test_reps 1 -f_config austin_test_IHT.json -n_proc 1 -tr transmission_new.csv -hos austin_real_hosp_updated.csv  -v_allocation vaccine_allocation_fixed.csv  -seed new_seed_Nov.p -n_policy 7  -v_boost=booster_allocation_fixed_50.csv -gt [-1,5,15,30,50]', wdir='.../COVID19-vaccine-main/VaccineAllocation')
+
 
 ## Pipelinemultitier.py
 - Responsible for generating plots after output from Crunch
@@ -68,8 +72,19 @@ Perform test simulation on the best found policy.
 ## Vaccine_policies.py
 - Includes different vaccine allocation policies that are simulated 
 
-## Running a sample path in main_allocation.py
-- runfile('... /COVID19-vaccine-main/VaccineAllocation/main_allocation.py', 'austin -f setup_data_Final.json -t tiers5_opt_Final.json -train_reps 0 -test_reps 1 -f_config austin_test_IHT.json -n_proc 1 -tr transmission_new.csv -hos austin_real_hosp_updated.csv  -v_allocation vaccine_allocation_fixed.csv  -seed new_seed_Nov.p -n_policy 7  -v_boost=booster_allocation_fixed_50.csv -gt [-1,5,15,30,50]', wdir='.../COVID19-vaccine-main/VaccineAllocation')
+## Least_squares_fit.py
+-  Minimizes a weighted sum of least-square errors to fit transmission-reduction parameters and certain dynamics in use of the ICU and hospital duration
+
+## Init.py
+
+## ACS_script.py
+
+## main_ACS.py
+
+## Objective_functions.py
+
+## Threshold_policy.py
+
 
 ## Crunch 
 
@@ -82,19 +97,20 @@ Perform test simulation on the best found policy.
 
 ## Running on Crunch
 - Use the following command
-1. Cd scratch
-2. qsub vaccine_batch.sh  
+  - cd scratch
+  - qsub vaccine_batch.sh
+
+
 
 - Use the following command to view submission status or delete submission
-1. qdel: delete submission
-2. qstat -u “*”: check submission status 
+  - qdel: delete submission
+  - qstat -u “*”: check submission status 
 
 - Option to change number of test or train reps through test_rep, train_rep
+
 - Change number of cores by changing n_proc and -pe smp 
 
 ## Downloading Output
+- - The .p file (data file) will be generated in /output 
 - After the submission is run, save the .p file from /scratch/VaccineAllocation/output by right-clicking and download into your own computer (.../COVID19-vaccine-main/VaccineAllocation/output)
 - Generate plots using pipelinemultitier.py or generate seeds using seeds_read.py in the data processing directory
-
-
-
