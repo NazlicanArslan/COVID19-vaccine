@@ -111,6 +111,6 @@ Perform test simulation on the best found policy.
 - Change number of cores by changing n_proc and -pe smp 
 
 ## Downloading Output
-- - The .p file (data file) will be generated in /output 
+- The .p file (data file) will be generated in /output 
 - After the submission is run, save the .p file from /scratch/VaccineAllocation/output by right-clicking and download into your own computer (.../COVID19-vaccine-main/VaccineAllocation/output)
 - Generate plots using pipelinemultitier.py or generate seeds using seeds_read.py in the data processing directory
