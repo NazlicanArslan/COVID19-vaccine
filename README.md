@@ -1,6 +1,6 @@
 # COVID19_CAOE
 
-Repository for COVID-19 response models of CAOE team. 
+Repository for COVID-19 Vaccine Planning Tool of Rockefeller Project
 
 ## Overview
 
