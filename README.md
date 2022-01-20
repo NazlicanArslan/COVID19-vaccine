@@ -1,6 +1,6 @@
-# COVID19_CAOE
+# COVID-19
 
-Repository for COVID-19 Vaccine Planning Tool of Rockefeller Project
+Repository is part of COVID-19 Vaccine Planning Tool of Rockefeller Foundation Project
 
 ## Overview
 
