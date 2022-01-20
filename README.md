@@ -1,5 +1,5 @@
 ## Overview
-Repository is part of COVID-19 Vaccine Planning Tool of Rockefeller Foundation Project
+Repository is part of COVID-19 Vaccine Planning Tool Project funded by Rockefeller Foundation
 
 This software is vaccine and variant of concern incorporated version of the following repository: https://github.com/haoxiangyang89/COVID_Staged_Alert
 
