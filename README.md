@@ -84,32 +84,6 @@ Perform test simulation on the best found policy.
 
 ## Threshold_policy.py
 
-
-## Crunch 
-
-## Copying to Crunch 
-
-- Use the following command 
-  - rsync -av --max-size=10m --exclude '*.pdf' --exclude '*.aux' --exclude '*.log' --exclude '*.tex' --exclude '*.aux' --exclude '*.p' --exclude '*.pyc' --exclude 'Old' --exclude 'presentations' VaccineAllocation/ [username]@crunch.osl.northwestern.edu:scratch
-- Ensure that the VaccineAllocation directory is located in Scratch
-- The vaccine_batch.sh file should be in Scratch, not VaccineAllocation directory 
-
-## Running on Crunch
-- Use the following command
-  - cd scratch
-  - qsub vaccine_batch.sh
-
-
-
-- Use the following command to view submission status or delete submission
-  - qdel: delete submission
-  - qstat -u “*”: check submission status 
-
-- Option to change number of test or train reps through test_rep, train_rep
-
-- Change number of cores by changing n_proc and -pe smp 
-
-## Downloading Output
+## Output files
 - The .p file (data file) will be generated in /output 
-- After the submission is run, save the .p file from /scratch/VaccineAllocation/output by right-clicking and download into your own computer (.../COVID19-vaccine-main/VaccineAllocation/output)
 - Generate plots using pipelinemultitier.py or generate seeds using seeds_read.py in the data processing directory
