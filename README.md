@@ -4,6 +4,8 @@ Repository for COVID-19 Vaccine Planning Tool of Rockefeller Project
 
 ## Overview
 
+This software is vaccine and variant of concern incorporated version of the following repository: https://github.com/haoxiangyang89/COVID_Staged_Alert
+
 ## Installation and how to run the code
 
 - Download and unzip the code to a local path (e.g., .../COVID19-vaccine-main/VaccineAllocation)
