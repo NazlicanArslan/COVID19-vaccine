@@ -265,14 +265,3 @@ def parse_arguments_acs():
         matplotlib.use('agg')
         print('Agg in use')
     return args
-
-
-#scp -r InterventionsMIP dduque@crunch.osl.northwestern.edu:~/scratch/TriggerOptimization/
-#scp dduque@crunch.osl.northwestern.edu:~/scratch/TriggerOptimization/InterventionsMIP/output/austin_step_Stage1_0_0_Stage2_0_5_Stage3_5_50_Stage4_30_80_Stage5_50_88_test_300.p ./InterventionsMIP/output/
-#scp frontera.tacc.utexas.edu:\$SCRATCH/InterventionsMIP/output/austin*.p ./InterventionsMIP/output/
-#InterventionsMIP/output/austin_SC0_CO0.8_BLTrain0.4_BLTest_0.4_step_opt.p  austin_SC0_CO0.95ST_BLTrain0.4_BLTest_0.4_step_opt
-# austin_step_Stage1_0_0_Stage2_0_5_Stage3_5_15_Stage4_25_60_Stage5_60_88_test_300
-# scp InterventionsMIP/*.py dduque@crunch.osl.northwestern.edu:~/scratch/TriggerOptimization/InterventionsMIP
-# scp -r InterventionsMIP/reporting dduque@crunch.osl.northwestern.edu:~/scratch/TriggerOptimization/InterventionsMIP
-# scp -r InterventionsMIP/instances dduque@crunch.osl.northwestern.edu:~/scratch/TriggerOptimization/InterventionsMIP
-# scp -r InterventionsMIP/config dduque@crunch.osl.northwestern.edu:~/scratch/TriggerOptimization/InterventionsMIP

@@ -20,10 +20,8 @@ if __name__ == '__main__':
     # Parse city and get corresponding instance
     instance = load_instance(args.city, setup_file_name=args.f, transmission_file_name=args.tr, hospitalization_file_name=args.hos)
     train_seeds, test_seeds = load_seeds(args.city, args.seed)
-    print('test seeds', test_seeds)
-    print('train seeds', train_seeds)
     tiers = load_tiers(args.city, tier_file_name=args.t)
-    #vaccines = load_vaccines(args.city, vaccine_file_name=args.v)
+  
     vaccines = load_vaccines(args.city, instance, vaccine_file_name=args.v, booster_file_name = args.v_boost, vaccine_allocation_file_name = args.v_allocation)
     # TODO Read command line args for n_proc for better integration with crunch
     n_proc = args.n_proc
@@ -71,7 +69,7 @@ if __name__ == '__main__':
     elif tiers.tier_type == 'linear':
         if given_threshold is not None:
             selected_policy = MTP.linear_policy(instance, tiers.tier, given_threshold, given_date, args.gs)
-    #breakpoint()        
+      
     # if a vaccine allocation is given, then it carries out a specific task
     # if not, then search for a policy
     selected_vaccine_policy = None
