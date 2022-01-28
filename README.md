@@ -45,11 +45,11 @@ To learn more about the project, previous and on-going work:
 ## main_allocation.py
 - The main module to run the simulation.
 - Running a sample path in main_allocation.py
-  -  runfile('... /COVID19-vaccine-main/VaccineAllocation/main_allocation.py', 'austin -f setup_data_Final.json -t tiers5_opt_Final.json -train_reps 0 -test_reps 1 -f_config austin_test_IHT.json -n_proc 1 -tr transmission_new.csv -hos austin_real_hosp_updated.csv  -v_allocation vaccine_allocation_fixed.csv  -seed new_seed_Nov.p -n_policy 7  -v_boost=booster_allocation_fixed_50.csv -gt [-1,5,15,30,50]', wdir='.../COVID19-vaccine-main/VaccineAllocation')
+  -  runfile('... /VaccineAllocation/main_allocation.py', 'austin -f setup_data_Final.json -t tiers5_opt_Final.json -train_reps 0 -test_reps 1 -f_config austin_test_IHT.json -n_proc 1 -tr transmission_new.csv -hos austin_real_hosp_updated.csv  -v_allocation vaccine_allocation_fixed.csv  -seed new_seed_Nov.p -n_policy 7  -v_boost=booster_allocation_fixed_50.csv -gt [-1,5,15,30,50]', wdir='.../VaccineAllocation')
 
 
 ## Pipelinemultitier.py
-- Responsible for generating plots after output from Crunch
+- Responsible for generating plots after creating output files.
 
 ## policy_search_functions.py
 
@@ -58,7 +58,7 @@ Perform test simulation on the best found policy.
 - If a trigger policy is given perform test simulation for the given policy.
 
 ## Epi_params.py
-- Contains epidemiological parameters from the TACC model
+- Contains epidemiological parameters.
 
 ## Interventions.py
 - Defines the knobs of an interventions and forms the available interventions considering school closures, cocooning, and different levels of social distancing
