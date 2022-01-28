@@ -1,1 +1,0 @@
-rsync -av --max-size=10m --exclude '*.pdf' --exclude '*.aux' --exclude '*.log' --exclude '*.tex' --exclude '*.aux' --exclude '*.p' --exclude '*.pyc' --exclude 'Old' --exclude 'presentations' VaccineAllocation/ nazlicanarslan@crunch.osl.northwestern.edu:~/scratch/VaccineOptimization/VaccineAllocation
