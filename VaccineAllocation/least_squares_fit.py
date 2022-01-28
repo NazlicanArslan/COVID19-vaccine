@@ -128,7 +128,6 @@ def residual_error(x_beta, **kwargs):
     df_cocooning = pd.DataFrame(data=d)
     cocooning = [(d, c) for (d, c) in zip(df_cocooning['date'], df_cocooning['cocooning'])]
     instance.cal.load_fixed_cocooning(cocooning, present_date=instance.end_date)
-    #breakpoint()
     #############
     #logger.info(f'beta: {str(beta)}')
 
@@ -204,37 +203,37 @@ def residual_error(x_beta, **kwargs):
     if instance.city == 'austin':
         hosp_benchmark = None
         real_hosp = [a_i - b_i for a_i, b_i in zip(instance.cal.real_hosp, real_icu)] 
-        hosp_benchmark = [sim_output['IH'][t].sum() for t in range(379, len(instance.cal.real_hosp))]
-        residual_error_IH = [a_i - b_i for a_i, b_i in zip(real_hosp[379:], hosp_benchmark)]
+        hosp_benchmark = [sim_output['IH'][t].sum() for t in range(642, len(instance.cal.real_hosp))]
+        residual_error_IH = [a_i - b_i for a_i, b_i in zip(real_hosp[642:], hosp_benchmark)]
         
         
-        icu_benchmark = [sim_output['ICU'][t].sum() for t in range(379, len(instance.cal.real_hosp))]
+        icu_benchmark = [sim_output['ICU'][t].sum() for t in range(642, len(instance.cal.real_hosp))]
         w_icu = 1.5
-        residual_error_ICU = [a_i - b_i for a_i, b_i in zip(real_icu[379:], icu_benchmark)]
+        residual_error_ICU = [a_i - b_i for a_i, b_i in zip(real_icu[642:], icu_benchmark)]
         residual_error_ICU = [element * w_icu for element in residual_error_ICU]
         residual_error_IH.extend(residual_error_ICU)
     
         w_iyih = 7.3*(1 - 0.10896) + 9.9*0.10896
-        daily_ad_benchmark = [sim_output['ToIHT'][t].sum() for t in range(379, len(instance.cal.real_hosp) - 1)] 
+        daily_ad_benchmark = [sim_output['ToIHT'][t].sum() for t in range(642, len(instance.cal.real_hosp) - 1)] 
         print('hospital admission: ', sum(daily_ad_benchmark))
-        residual_error_IYIH = [a_i - b_i for a_i, b_i in zip(hosp_ad[379:], daily_ad_benchmark)]
+        residual_error_IYIH = [a_i - b_i for a_i, b_i in zip(hosp_ad[642:], daily_ad_benchmark)]
         residual_error_IYIH = [element * w_iyih for element in residual_error_IYIH]
         residual_error_IH.extend(residual_error_IYIH)
         
         w_d = w_iyih*5
-        daily_death_benchmark = [sim_output['D'][t+1].sum() - sim_output['D'][t].sum() for t in range(379, len(instance.cal.real_hosp) - 1)] 
+        daily_death_benchmark = [sim_output['D'][t+1].sum() - sim_output['D'][t].sum() for t in range(642, len(instance.cal.real_hosp) - 1)] 
         daily_death_benchmark.insert(0, 0)
         daily_death_benchmark = [sim_output['ToICUD'][t].sum() for t in range(len(instance.cal.real_hosp) - 1)] 
         daily_death_benchmark.insert(0, 0)
-        residual_error_death = [a_i - b_i for a_i, b_i in zip(real_death_from_hosp[379:], daily_death_benchmark)]
+        residual_error_death = [a_i - b_i for a_i, b_i in zip(real_death_from_hosp[642:], daily_death_benchmark)]
         residual_error_death = [element * w_d for element in residual_error_death]
         residual_error_IH.extend(residual_error_death)     
         
         w_iyd = w_d
         real_toIYD = [a_i - b_i for a_i, b_i in zip(real_death_total, real_death_from_hosp)]
-        daily_toIYD_benchmark = [sim_output['ToIYD'][t].sum() for t in range(379, len(instance.cal.real_hosp) - 1)] 
+        daily_toIYD_benchmark = [sim_output['ToIYD'][t].sum() for t in range(642, len(instance.cal.real_hosp) - 1)] 
         daily_death_benchmark.insert(0, 0)
-        residual_error_death = [a_i - b_i for a_i, b_i in zip(real_toIYD[379:], daily_toIYD_benchmark)]
+        residual_error_death = [a_i - b_i for a_i, b_i in zip(real_toIYD[642:], daily_toIYD_benchmark)]
         residual_error_death = [element * w_iyd for element in residual_error_death]
         residual_error_IH.extend(residual_error_death)  
     #breakpoint()
@@ -247,7 +246,7 @@ def least_squares_fit(initial_guess, kwargs):
     result = least_squares(residual_error,
                            initial_guess,
                            bounds = ([0, 0, 0, 0],
-                                     [10, 1, 10, 1]),
+                                     [1, 1, 10, 1]),
                            method='trf', verbose=2,
                            kwargs = kwargs)
     return result 
@@ -310,8 +309,8 @@ def run_fit(instance,
                         dt.date(2022, 1, 3)] 
 
         #initial guess 0.1,
-        x = np.array([0.2, 0.3, 3.5, 0.003])       
-   
+        x = np.array([0.26, 0.26, 3.5, 0])       
+
     selected_vaccine_policy = VAP.vaccine_policy(instance, vaccines, 'deterministic')
     
     kwargs  = {'change_dates' : change_dates,
