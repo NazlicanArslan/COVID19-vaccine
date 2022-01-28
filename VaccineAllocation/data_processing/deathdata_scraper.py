@@ -1,5 +1,6 @@
 import pandas as pd
 from pathlib import Path
+from datetime import datetime
 
 url="https://www.dshs.state.tx.us/coronavirus/TexasCOVID19DailyCountyFatalityCountData.xlsx"
 
@@ -24,12 +25,30 @@ df_2022=df_2022[["County", "Hays", "Bastrop", "Caldwell", "Travis", "Williamson"
 df_all=df_2020.append(df_2021)
 df_all=df_all.append(df_2022)
 
-dict = {'County' : 'Date'}
+dict = {'County' : 'date'}
 df_all.rename(columns=dict,
           inplace=True)
 
-instances_path = Path(__file__).parent
-path = instances_path.parent / 'instances/austin/scraped_death_data.csv'
+df_all['date'] = pd.to_datetime(df_all.date, format='%m/%d/%Y')
+df_all["date"] = df_all["date"].dt.strftime("%m/%d/%y")
 
-df_all.to_csv(path, index=False)
+
+df_all['Sum'] = df_all['Hays'] + df_all['Bastrop'] + df_all['Caldwell'] + df_all['Travis'] + df_all['Williamson']
+df_all=df_all[['date','Sum']]
+df_all["hospitalized"] = df_all["Sum"] - df_all["Sum"].shift(1)
+df_all["hospitalized"][0]=0
+df_all=df_all[["date", "hospitalized"]]
+
+instances_path = Path(__file__).parent
+path1=path = instances_path.parent / 'instances/austin/austin_real_total_death.csv'
+
+
+df_init=pd.read_csv(path1, index_col=None)
+df_init=df_init[1:24]
+df_init=df_init[["date", "hospitalized"]]
+df_init=df_init.append(df_all)
+
+path2 = instances_path.parent / 'instances/austin/scraped_death_data.csv'
+
+df_init.to_csv(path2, index=False)
 

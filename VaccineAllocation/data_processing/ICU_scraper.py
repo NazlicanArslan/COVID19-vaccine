@@ -23,10 +23,10 @@ for d in df['attributes.Date_Updated']:
 df.drop(['attributes.ACS_Admiss', 'attributes.DisplayDate','attributes.No_Data', 'attributes.Record_Status'], inplace=True, axis=1)
 
 #Rename column headers
-dict={'attributes.Date_Updated' : 'Date', "attributes.F7_Day_MA_NA" : "New Admin. 7D MA " , 
+dict={'attributes.Date_Updated' : 'date', "attributes.F7_Day_MA_NA" : "New Admin. 7D MA " , 
       "attributes.New_Cases_NC" : "New cases", "attributes.F7_Day_MA_NC" : "New cases 7D MA", 
       "attributes.Doubling_Time" : "Doubling time", "attributes.Curr_Hosp_Inpatients" : "Current Hosp. Inpatient",
-      "attributes.F7_Day_MA_Hosp" : "New Hosp. 7D MA", "attributes.Curr_ICU": "Current ICU", 
+      "attributes.F7_Day_MA_Hosp" : "New Hosp. 7D MA", "attributes.Curr_ICU": "hospitalized", 
       "attributes.F7_Day_MA_ICU" : "ICU 7D MA", "attributes.Curr_Ventilator" : "Current Ventilator",
       "attributes.F7_Day_MA_Vent" : "Ventilator 7D MA", "attributes.ObjectID": "Object ID",
       "attributes.New_Admissions" : "New Admissions" , "attributes.NC_L7day" : "New Cases 7D"}
@@ -34,12 +34,24 @@ dict={'attributes.Date_Updated' : 'Date', "attributes.F7_Day_MA_NA" : "New Admin
 df.rename(columns=dict,
           inplace=True)
 
-df=df[['Date', 'Current ICU']]
+df=df[['date', 'hospitalized']]
+
+df['date'] = pd.to_datetime(df.date, format='%m/%d/%y')
+df["date"] = df["date"].dt.strftime("%m/%d/%y")
+
+instances_path = Path(__file__).parent
+path1=path = instances_path.parent / 'instances/austin/austin_real_icu_updated.csv'
+
+df_init=pd.read_csv(path1, index_col=None)
+df_init=df_init[1:24]
+df_init=df_init[["date", "hospitalized"]]
+
+df_init=df_init.append(df)
 
 #Convert to csv file in the directory 
-instances_path = Path(__file__).parent
-path = instances_path.parent / 'instances/austin/scraped_ICU_data.csv'
 
-df.to_csv(path, index=True)
+path2 = instances_path.parent /'instances/austin/scraped_ICU_data.csv'
+
+df_init.to_csv(path2, index=True)
 
 
