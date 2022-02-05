@@ -45,7 +45,7 @@ path1=path = instances_path.parent / 'instances/austin/austin_real_total_death.c
 
 
 df_init=pd.read_csv(path1, index_col=None)
-df_init=df_init[1:24]
+df_init=df_init[1:18]
 df_init=df_init[["date", "hospitalized"]]
 df_init=df_init.append(df_all)
 
