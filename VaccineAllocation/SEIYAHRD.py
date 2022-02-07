@@ -155,10 +155,19 @@ def simulate_vaccine(instance, policy, interventions, v_policy, seed=-1, **kwarg
         ICU_unvac = np.zeros((T, A, L))
         ToIHT_unvac = np.zeros((T - 1, A, L))
         IH_unvac = np.zeros((T, A, L))
-        
+   
         for v_group in v_policy._vaccine_groups:
             # Update compartments
-            S += v_group.S
+            #S = v_group.S[t]
+            if v_group.v_name == 'v_0':
+                S0=v_policy._vaccine_groups[0].S
+            if v_group.v_name == 'v_1':
+                S1=v_policy._vaccine_groups[1].S
+            if v_group.v_name == 'v_2':
+                S2=v_policy._vaccine_groups[2].S
+            if v_group.v_name == 'v_3':
+                S3=v_policy._vaccine_groups[3].S
+            
             E += v_group.E
             IA += v_group.IA
             IY += v_group.IY
@@ -185,12 +194,15 @@ def simulate_vaccine(instance, policy, interventions, v_policy, seed=-1, **kwarg
                 ICU_unvac = v_group.ICU
                 ToIHT_unvac= v_group.ToIHT
                 IH_unvac = v_group.IH
+                S=v_group.S[t]
        
             if v_group.v_name == 'v_2':
                 ICU_vac = v_group.ICU
                 ToIHT_vac= v_group.ToIHT
                 IH_vac = v_group.IH
-                
+        
+        
+     
         total_imbalance = np.sum(S[t] + E[t] + IA[t] + IY[t] + IH[t] + R[t] + D[t] + PA[t] + PY[t] + ICU[t]) - np.sum(N)
        
         
@@ -202,9 +214,13 @@ def simulate_vaccine(instance, policy, interventions, v_policy, seed=-1, **kwarg
     ToIHT_moving = [ToIHT_temp[i: min(i + moving_avg_len, T)].mean() for i in range(T-moving_avg_len)]
     ToIY_moving = [ToIY_temp[i: min(i + moving_avg_len, T)].sum()* 100000/np.sum(N, axis=(0,1)) for i in range(T-moving_avg_len)] 
     ICU_ratio = np.sum(ICU, axis=(1, 2))[:T]/(np.sum(ICU, axis=(1, 2))[:T] + np.sum(IH, axis=(1, 2))[:T])
-  
+    
     output = {
         'S': S,
+        'S0': S0,
+        'S1': S1,
+        'S2': S2,
+        'S3': S3,
         'E': E,
         'PA': PA,
         'PI': PY,
