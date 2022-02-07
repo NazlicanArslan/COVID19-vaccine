@@ -77,7 +77,6 @@ def residual_error(x_beta, **kwargs):
              0.787752,
              0.641986,
              0.827015,
-             0.827015,
              0.778334,
              0.752980,
              0.674321,
@@ -87,12 +86,13 @@ def residual_error(x_beta, **kwargs):
              0.5551,
              0.6446,
              0.6869,
-             0.55]
+             0.7186,
+             x_beta[4],
+             x_beta[5]]
     
     cocoon = [0,
               0.787752,
               0.787752,
-              0.827015,
               0.827015,
               0.827015,
               0.787752,
@@ -103,7 +103,9 @@ def residual_error(x_beta, **kwargs):
               0.5551,
               0.6446,
               0.6869,
-              0.55]
+              0.7186,
+              x_beta[4],
+              x_beta[5]]
 
     tr_reduc = []
     date_list = []
@@ -245,8 +247,8 @@ def least_squares_fit(initial_guess, kwargs):
     # Function that runs the least squares fit
     result = least_squares(residual_error,
                            initial_guess,
-                           bounds = ([0, 0, 0, 0],
-                                     [1, 1, 10, 1]),
+                           bounds = ([0, 0, 0, 0, 0, 0],
+                                     [1, 1, 10, 1, 1, 1]),
                            method='trf', verbose=2,
                            kwargs = kwargs)
     return result 
@@ -304,12 +306,13 @@ def run_fit(instance,
                         dt.date(2021, 6, 20),
                         dt.date(2021, 7, 31),
                         dt.date(2021, 8, 22),
-                        dt.date(2021, 9, 17),
+                        dt.date(2021, 9, 24),
                         dt.date(2021, 10, 25),
-                        dt.date(2022, 1, 3)] 
+                        dt.date(2022, 1, 5),
+                        dt.date(2022, 1, 27)] 
 
         #initial guess 0.1,
-        x = np.array([0.26, 0.26, 3.5, 0])       
+        x = np.array([0.7, 0.1, 3.5, 0, 0.55, 0.68])       
 
     selected_vaccine_policy = VAP.vaccine_policy(instance, vaccines, 'deterministic')
     
@@ -335,7 +338,6 @@ def run_fit(instance,
              0.787752,
              0.641986,
              0.827015,
-             0.827015,
              0.778334,
              0.752980,
              0.674321,
@@ -345,12 +347,13 @@ def run_fit(instance,
              0.5551,
              0.6446,
              0.6869,
-             0.55])
+             0.7186,
+             opt_tr_reduction[4],
+             opt_tr_reduction[5]])
     
     cocoon = np.array([0,
               0.787752,
               0.787752,
-              0.827015,
               0.827015,
               0.827015,
               0.787752,
@@ -361,7 +364,9 @@ def run_fit(instance,
               0.5551,
               0.6446,
               0.6869,
-              0.55])
+              0.7186,
+              opt_tr_reduction[4],
+              opt_tr_reduction[5]])
                                                                                 
     betas = instance.epi.beta*(1 - (contact_reduction))
     end_date = []
@@ -370,13 +375,16 @@ def run_fit(instance,
     
     print('beta_0:', instance.epi.beta)   
     print('SSE:', SSE)   
-    table = pd.DataFrame({'start_date': change_dates[:-1], 'end_date': end_date, 'contact_reduction': contact_reduction, 'beta': betas, 'cocoon': cocoon})
-    print(table)
-    
     print('alpha1_omic=', opt_tr_reduction[0])
     print('alpha2_omic=', opt_tr_reduction[1])
     print('alpha3_omic=', opt_tr_reduction[2])
     print('alpha4_omic=', opt_tr_reduction[3])
+    
+    breakpoint()
+    table = pd.DataFrame({'start_date': change_dates[:-1], 'end_date': end_date, 'contact_reduction': contact_reduction, 'beta': betas, 'cocoon': cocoon})
+    print(table)
+    
+    
     
     #Save optimized values to transmission_new.csv
     tr_reduc = []

@@ -357,15 +357,15 @@ class MultiTierPolicy():
         #     if ToIY_avg > 5:
         #         new_tier = current_tier
         
-        # if new_tier == 0:
-        #     if ToIY_avg > 5:
-        #         if ToIY_avg < 10:
-        #             new_tier = 1
-        #         else :
-        #             new_tier = current_tier
-        # elif new_tier == 1:
-        #     if ToIY_avg > 10:
-        #         new_tier = current_tier
+        if new_tier == 0:
+            if ToIY_avg > 5:
+                if ToIY_avg < 10:
+                    new_tier = 1
+                else :
+                    new_tier = 2
+        elif new_tier == 1:
+            if ToIY_avg > 10:
+                new_tier = 2
                 
         if new_tier > current_tier:  # bump to the next tier
             t_end = np.minimum(t + self.tiers[new_tier]['min_enforcing_time'], T)
