@@ -158,11 +158,8 @@ def simulate_vaccine(instance, policy, interventions, v_policy, seed=-1, **kwarg
    
         for v_group in v_policy._vaccine_groups:
             # Update compartments
-<<<<<<< Updated upstream
             #S = v_group.S[t]
-=======
             S += v_group.S
->>>>>>> Stashed changes
             if v_group.v_name == 'v_0':
                 S0=v_policy._vaccine_groups[0].S
             if v_group.v_name == 'v_1':
@@ -171,11 +168,7 @@ def simulate_vaccine(instance, policy, interventions, v_policy, seed=-1, **kwarg
                 S2=v_policy._vaccine_groups[2].S
             if v_group.v_name == 'v_3':
                 S3=v_policy._vaccine_groups[3].S
-<<<<<<< Updated upstream
-            
-=======
-                
->>>>>>> Stashed changes
+
             E += v_group.E
             IA += v_group.IA
             IY += v_group.IY

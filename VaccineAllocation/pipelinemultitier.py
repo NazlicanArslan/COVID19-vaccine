@@ -56,7 +56,6 @@ def icu_pipeline(file_path, instance_name, real_hosp=None, real_admit=None, hosp
     icu_beds_list = [instance.icu]
     real_icu_ratio = [real_icu[i]/(real_hosp[i]) for i in range(len(real_icu))  if real_hosp[i] != 0]
     # plot the IHT comparison
-<<<<<<< Updated upstream
     # IHD_plot = plot_multi_tier_sims(instance_name,
     #                         instance,
     #                         best_policy,
@@ -181,8 +180,6 @@ def icu_pipeline(file_path, instance_name, real_hosp=None, real_admit=None, hosp
     #                         acs_type = acs_type
     #                         )
     S_plot0 = plot_multi_tier_sims(instance_name,
-=======
-    S_plot0 = plot_multi_tier_sims(instance_name,
                             instance,
                             best_policy,
                             profiles, ['sim'] * len(profiles),
@@ -214,16 +211,11 @@ def icu_pipeline(file_path, instance_name, real_hosp=None, real_admit=None, hosp
                             )
     
     S_plot1 = plot_multi_tier_sims(instance_name,
->>>>>>> Stashed changes
                             instance,
                             best_policy,
                             profiles, ['sim'] * len(profiles),
                             real_hosp,
-<<<<<<< Updated upstream
-                            plot_left_axis=['S0'],
-=======
                             plot_left_axis=['S1'],
->>>>>>> Stashed changes
                             plot_right_axis=[],
                             T=T,
                             interventions=interventions,
@@ -232,11 +224,7 @@ def icu_pipeline(file_path, instance_name, real_hosp=None, real_admit=None, hosp
                             plot_triggers=False,
                             plot_trigger_annotations=False,
                             plot_legend=False,
-<<<<<<< Updated upstream
-                            y_lim=2000000,
-=======
                             y_lim=4000000,
->>>>>>> Stashed changes
                             policy_params=best_params,
                             n_replicas=n_replicas,
                             config=config,
