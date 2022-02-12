@@ -20,7 +20,7 @@ import copy
  #                 group 2: fully vaccinated,    
  #                 group 3: waning efficacy group.  
 
-def immune_escape(immune_escape_rate, t, types, v_policy, step_size):
+def immune_escape(immune_escape_rate, t, types, v_policy):
     '''
         This function move recovered and vaccinated individuals to waning efficacy susceptible 
         compartment after omicron become the prevelant virus type.
@@ -28,21 +28,21 @@ def immune_escape(immune_escape_rate, t, types, v_policy, step_size):
     #breakpoint()
     for idx, v_groups in enumerate(v_policy._vaccine_groups):
         if types == 'int':
-            moving_people = (v_groups._R[step_size] *  immune_escape_rate).astype(int)
+            moving_people = (v_groups.R[t] *  immune_escape_rate).astype(int)
         else:
-            moving_people = v_groups._R[step_size] *  immune_escape_rate
+            moving_people = v_groups.R[t] *  immune_escape_rate
                 
-        v_groups.R[t+1] -=  moving_people
-        v_policy._vaccine_groups[3].S[t+1] +=  moving_people
+        v_groups.R[t] -=  moving_people
+        v_policy._vaccine_groups[3].S[t] +=  moving_people
             
         if v_groups.v_name == 'v_1' or v_groups.v_name == 'v_2':
             if types == 'int':
-                moving_people = (v_groups._S[step_size] *  immune_escape_rate).astype(int)
+                moving_people = (v_groups.S[t] *  immune_escape_rate).astype(int)
             else:
-                moving_people = v_groups._S[step_size] *  immune_escape_rate
+                moving_people = v_groups.S[t] *  immune_escape_rate
             
-            v_groups.S[t+1] -=  moving_people
-            v_policy._vaccine_groups[3].S[t+1] +=  moving_people
+            v_groups.S[t] -=  moving_people
+            v_policy._vaccine_groups[3].S[t] +=  moving_people
  
     #breakpoint()
 
@@ -159,16 +159,15 @@ def simulate_vaccine(instance, policy, interventions, v_policy, seed=-1, **kwarg
         for v_group in v_policy._vaccine_groups:
             # Update compartments
             #S = v_group.S[t]
-            S += v_group.S
             if v_group.v_name == 'v_0':
-                S0=v_policy._vaccine_groups[0].S
+                S0=v_policy._vaccine_groups[0].S[t]
             if v_group.v_name == 'v_1':
-                S1=v_policy._vaccine_groups[1].S
+                S1=v_policy._vaccine_groups[1].S[t]
             if v_group.v_name == 'v_2':
-                S2=v_policy._vaccine_groups[2].S
+                S2=v_policy._vaccine_groups[2].S[t]
             if v_group.v_name == 'v_3':
-                S3=v_policy._vaccine_groups[3].S
-
+                S3=v_policy._vaccine_groups[3].S[t]
+            
             E += v_group.E
             IA += v_group.IA
             IY += v_group.IY
@@ -313,7 +312,10 @@ def simulate_t(instance, v_policy, policy, interventions, t_date, epi_rand, epi_
                     for v_groups in v_policy._vaccine_groups:
                         v_groups.omicron_update(instance.delta_prev[t - T_delta])
 
-                    
+                    if t == T_variant:
+                        # Move almost half of the people from recovered to susceptible:
+                        immune_escape(epi.immune_escape_rate, t, types, v_policy)
+            
             
             #breakpoint()
             if t >= T_variant - 12:
@@ -415,9 +417,7 @@ def simulate_t(instance, v_policy, policy, interventions, t_date, epi_rand, epi_
                     v_groups._ToIYD[_t] = IYD
                     v_groups._ToIA[_t] = PAIA
                     v_groups._ToIY[_t] = PYIY
-                    
-            
-                    
+
             for idx, v_groups in enumerate(v_policy._vaccine_groups):
                 # End of the daily disctretization
                 v_groups.S[t + 1] = v_groups._S[step_size].copy() 
@@ -441,12 +441,6 @@ def simulate_t(instance, v_policy, policy, interventions, t_date, epi_rand, epi_
                 v_groups.ToIY[t] = v_groups._ToIY.sum(axis=0)
                 v_groups.ToIA[t] = v_groups._ToIA.sum(axis=0)
          
-            if t == T_variant:
-                # Move almost half of the people from recovered to susceptible:
-                immune_escape(epi.immune_escape_rate, t, types, v_policy, step_size)
-            # if t >=  T_variant-1:   
-            #     breakpoint()
-                
             if t >= v_policy._vaccines.vaccine_start_time:
                 S_before = np.zeros((5, 2))
       
