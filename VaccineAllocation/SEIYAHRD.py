@@ -158,6 +158,15 @@ def simulate_vaccine(instance, policy, interventions, v_policy, seed=-1, **kwarg
         
         for v_group in v_policy._vaccine_groups:
             # Update compartments
+            if v_group.v_name == 'v_0':
+                S0=v_policy._vaccine_groups[0].S
+            if v_group.v_name == 'v_1':
+                S1=v_policy._vaccine_groups[1].S
+            if v_group.v_name == 'v_2':
+                S2=v_policy._vaccine_groups[2].S
+            if v_group.v_name == 'v_3':
+                S3=v_policy._vaccine_groups[3].S
+                
             S += v_group.S
             E += v_group.E
             IA += v_group.IA
@@ -205,6 +214,10 @@ def simulate_vaccine(instance, policy, interventions, v_policy, seed=-1, **kwarg
   
     output = {
         'S': S,
+        'S0': S0,
+        'S1': S1,
+        'S2': S2,
+        'S3': S3,
         'E': E,
         'PA': PA,
         'PI': PY,

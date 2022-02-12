@@ -24,8 +24,8 @@ import csv
 
 plt.rcParams['hatch.linewidth'] = 3.0
 
-colors = {'S': 'b', 'E': 'y', 'IA': 'c', 'IY': 'm', 'IH': 'k', 'R': 'g', 'D': 'k', 'ToIHT': 'teal', 'ToIHT_moving': 'teal', 'ToIA': 'teal', 'ToIY_moving': 'teal','ToIHT_unvac': 'teal', 'ToIHT_vac': 'teal', 'ICU': 'k', 'ICU_ratio': 'k','ToICU': 'teal', 'IHT': 'k', 'ITot': 'k'}
-light_colors = {'IH':'silver','ToIHT':'paleturquoise', 'ToIHT_moving':'paleturquoise', 'D': 'teal', 'ToIHT_unvac':'paleturquoise', 'ToIHT_unvac':'paleturquoise','ToIA':'paleturquoise', 'ToIY_moving': 'paleturquoise', 'ICU':'silver', 'ICU_ratio':'silver','ToICU': 'paleturquoise', 'IHT': 'silver', 'ITot': 'silver'}
+colors = {'S': 'b', 'S0': 'b', 'S1': 'b', 'S2': 'b',  'S3': 'b', 'E': 'y', 'IA': 'c', 'IY': 'm', 'IH': 'k', 'R': 'g', 'D': 'k', 'ToIHT': 'teal', 'ToIHT_moving': 'teal', 'ToIA': 'teal', 'ToIY_moving': 'teal','ToIHT_unvac': 'teal', 'ToIHT_vac': 'teal', 'ICU': 'k', 'ICU_ratio': 'k','ToICU': 'teal', 'IHT': 'k', 'ITot': 'k'}
+light_colors = {'IH':'silver','ToIHT':'paleturquoise', 'ToIHT_moving':'paleturquoise', 'D': 'teal', 'ToIHT_unvac':'paleturquoise', 'ToIHT_unvac':'paleturquoise','ToIA':'paleturquoise', 'ToIY_moving': 'paleturquoise', 'ICU':'silver', 'ICU_ratio':'silver','ToICU': 'paleturquoise', 'IHT': 'silver', 'ITot': 'silver', 'S': 'blue', 'S0': 'blue', 'S1': 'blue', 'S2': 'blue', 'S3': 'blue'}
 l_styles = {'sim': '-', 'opt': '--'}
 compartment_names = {
     'ITot': 'Total Infectious',
@@ -35,6 +35,10 @@ compartment_names = {
     'D': 'Deaths',
     'R': 'Recovered',
     'S': 'Susceptible',
+    'S0': 'S Group 0',
+    'S1': 'S Group 1',
+    'S2': 'S Group 2',
+    'S3': 'S Group 3',
     'ICU': 'COVID-19 ICU Patients',
     'IHT': 'COVID-19 Hospitalizations',
     'ToICU': 'Daily COVID-19 ICU Admissions',
@@ -221,12 +225,13 @@ def plot_multi_tier_sims(instance_name,
     max_y_lim_1 = population if 'S' in plot_left_axis or 'R' in plot_left_axis else 0
     max_y_lim_2 = population if 'S' in plot_right_axis or 'R' in plot_right_axis else 0
     plotted_lines = []
-    
+  
     # Add IHT field
     #if 'ICU' in profiles[0].keys():
     #if 'ICU' in profiles.keys():
     for p in profiles:
         p['IHT'] = p['IH'] + p['ICU']
+        #p['S0'] = p['S']/4
 
     # Transform data of interest
     states_to_plot = plot_left_axis + plot_right_axis
@@ -240,11 +245,12 @@ def plot_multi_tier_sims(instance_name,
     states_ts['z'] = np.vstack(list(p['z'][:T] for p in profiles))
     states_ts['tier_history'] = np.vstack(list(p['tier_history'][:T] for p in profiles))
     
-    states_to_plot_temp = ['IHT', 'ToIHT', 'ICU', 'D', 'ToIA']
+    states_to_plot_temp = ['IHT', 'ToIHT', 'ICU', 'D', 'ToIA', 'S0', 'S1', 'S2', 'S3']
+    #breakpoint()
     states_ts_temp = {v: np.vstack(list(np.sum(p[v], axis=(1, 2))[:T] for p in profiles)) for v in states_to_plot_temp}
     states_ts_temp['ToIHT_moving'] = np.vstack(list(p['ToIHT_moving'][:T] for p in profiles))
     states_ts_temp['ToIY_moving'] = np.vstack(list(p['ToIY_moving'][:T] for p in profiles))
-    states_to_plot_temp = ['IHT', 'ToIHT', 'ICU', 'D', 'ToIA', 'ToIY','ToIHT_moving', 'ToIY']
+    states_to_plot_temp = ['IHT', 'ToIHT', 'ICU', 'D', 'ToIA', 'ToIY','ToIHT_moving', 'ToIY', 'S0', 'S1', 'S2', 'S3']
     
     for cap in [200, 175, 150]:
         ICU_cap_exceed = sum(1 for p in profiles if any(val> cap for val in np.sum(p['ICU'], axis=(1, 2))[t_start:t_start+40])) 
@@ -291,7 +297,7 @@ def plot_multi_tier_sims(instance_name,
     new_profiles = [mean_st, min_st, max_st]
     
     # Stats
-    all_states = ['S', 'E', 'IH', 'IA', 'IY', 'R', 'D']
+    all_states = ['S', 'E', 'IH', 'IA', 'IY', 'R', 'D', 'S0', 'S1', 'S2', 'S3']
     if 'ICU' in profiles[0].keys():
         all_states.append('ICU')
         all_states.append('IHT')
@@ -339,6 +345,7 @@ def plot_multi_tier_sims(instance_name,
     Median_deaths = np.round(np.percentile(np.sum(all_states_ts_ind['D'][:, -1, :, :], axis=(1, 2)), 50))
     CI5_deaths = np.round(np.percentile(np.sum(all_states_ts_ind['D'][:, -1, :, :], axis=(1, 2)), lb_band))
     CI95_deaths = np.round(np.percentile(np.sum(all_states_ts_ind['D'][:, -1, :, :], axis=(1, 2)), ub_band))
+
     print('Deaths End Horizon')
     print(f'Point forecast {all_states_ts["D"][0][-1]}')
     print(f'Mean {avg_deaths_by_group.sum()} Median:{Median_deaths} CI_5_95:[{CI5_deaths}-{CI95_deaths}]')
@@ -363,6 +370,16 @@ def plot_multi_tier_sims(instance_name,
             plotted_lines.append(v_a[0])
             v_aa = ax1.plot(all_st[v].T * bed_scale, c=light_colors[v], linestyle=l_style, linewidth=1, label=label_v, alpha=0.8 * hide)
             plotted_lines.append(v_aa[0])
+        if v == 'S0':                
+            v_a = ax1.plot(all_st['S0'].T , c=colors[v], linestyle=l_style, linewidth=2, label=label_v, alpha=1 * hide, zorder = 50)
+        if v == 'S1':                
+            v_a = ax1.plot(all_st['S1'].T , c=colors[v], linestyle=l_style, linewidth=2, label=label_v, alpha=1 * hide, zorder = 50)
+        if v == 'S2':                
+            v_a = ax1.plot(all_st['S2'].T, c=colors[v], linestyle=l_style, linewidth=2, label=label_v, alpha=1 * hide, zorder = 50)
+        if v == 'S3':                
+            v_a = ax1.plot(all_st['S3'].T , c=colors[v], linestyle=l_style, linewidth=2, label=label_v, alpha=1 * hide, zorder = 50)
+            #plotted_lines.append(v_a[0])
+            
         # if central_path != 0:
         #     ax1.fill_between(range(len(max_st[v])),
         #                     max_st[v],
@@ -372,6 +389,8 @@ def plot_multi_tier_sims(instance_name,
         #                     facecolor="none",
         #                     linewidth=0.0,
         #                     alpha=0.5 * hide)
+       
+            
         if v == 'ICU':
             ax1.hlines(150, 0, T, color='k', linestyle='-', linewidth=3 )
         if v == 'IH' or v == 'ICU' or v == 'IHT' or v == 'ITot' or v == 'ICU_ratio':
