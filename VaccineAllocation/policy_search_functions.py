@@ -365,7 +365,8 @@ def trigger_policy_search(instance,
     unique_out = np.array(unique_seeds)
     
     selected_vaccine_policy = []
-    
+
+  
     with open(str(file_path), 'wb') as outfile:
         pickle.dump(
             (instance, interventions_train, best_params, best_policy, vaccines, stoch_replicas, 
