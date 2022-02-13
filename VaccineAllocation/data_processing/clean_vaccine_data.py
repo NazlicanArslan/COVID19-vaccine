@@ -7,10 +7,10 @@ datetime_formater = '%Y-%m-%d %H:%M:%S'
 date_formater = '%Y-%m-%d'
 
 N = [128527,	9350,
-     327148,	37451,
-     915894,	156209,
-     249273,	108196,
-     132505,	103763]
+      327148,	37451,
+      915894,	156209,
+      249273,	108196,
+      132505,	103763]
 
 def clean_data(file_name, sheet_naming):
     data = pandas.read_excel(file_name, sheet_name= sheet_naming).to_dict()
@@ -115,7 +115,7 @@ with open('austin_first_dose.csv', 'w', newline='') as file:
     
             if austin is not None:
                 vaccine_amount = sum(austin)/sum(N)
-                   # print(vaccine_amount)
+                    # print(vaccine_amount)
                     #print(sum(austin))
             else:
                 vaccine_amount = None
