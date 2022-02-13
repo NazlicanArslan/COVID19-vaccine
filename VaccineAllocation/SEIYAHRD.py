@@ -15,17 +15,12 @@ from trigger_policies import MultiTierPolicy,MultiTierPolicy_ACS
 from VaccineAllocation import config
 import copy
 
- # group 0: unvaccinated group,
- #                 group 1: partially vaccinated, 
- #                 group 2: fully vaccinated,    
- #                 group 3: waning efficacy group.  
-
 def immune_escape(immune_escape_rate, t, types, v_policy, step_size):
+
     '''
         This function move recovered and vaccinated individuals to waning efficacy susceptible 
         compartment after omicron become the prevelant virus type.
     '''
-    #breakpoint()
     for idx, v_groups in enumerate(v_policy._vaccine_groups):
         if types == 'int':
             moving_people = (v_groups._R[step_size] *  immune_escape_rate).astype(int)
@@ -44,7 +39,6 @@ def immune_escape(immune_escape_rate, t, types, v_policy, step_size):
             v_groups.S[t+1] -=  moving_people
             v_policy._vaccine_groups[3].S[t+1] +=  moving_people
  
-    #breakpoint()
 
 def simulate_vaccine(instance, policy, interventions, v_policy, seed=-1, **kwargs):
     '''

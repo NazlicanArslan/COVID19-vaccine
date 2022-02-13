@@ -309,10 +309,10 @@ def run_fit(instance,
                         dt.date(2021, 9, 24),
                         dt.date(2021, 10, 25),
                         dt.date(2022, 1, 5),
-                        dt.date(2022, 1, 27)] 
+                        dt.date(2022, 2, 7)] 
 
-        #initial guess 0.1,
-        x = np.array([0.7, 0.1, 3.5, 0, 0.55, 0.68])       
+  
+        x = np.array([0.7, 0.25, 3.5, 0, 0.58, 0.68])       
 
     selected_vaccine_policy = VAP.vaccine_policy(instance, vaccines, 'deterministic')
     
@@ -380,7 +380,7 @@ def run_fit(instance,
     print('alpha3_omic=', opt_tr_reduction[2])
     print('alpha4_omic=', opt_tr_reduction[3])
     
-    breakpoint()
+    #breakpoint()
     table = pd.DataFrame({'start_date': change_dates[:-1], 'end_date': end_date, 'contact_reduction': contact_reduction, 'beta': betas, 'cocoon': cocoon})
     print(table)
     

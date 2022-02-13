@@ -566,7 +566,7 @@ if __name__ == "__main__":
             if "austin" in instance_raw:
                 file_path = "instances/austin/austin_real_hosp_updated.csv"
                 start_date = dt(2020,2,28)
-                end_history = dt(2022,1,27)
+                end_history = dt(2022,2,7)
                 real_hosp = read_hosp(file_path, start_date)
                 hosp_beds_list = None
                 file_path = "instances/austin/austin_hosp_ad_updated.csv"
