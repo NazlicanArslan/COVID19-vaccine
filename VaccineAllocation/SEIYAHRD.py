@@ -197,7 +197,7 @@ def simulate_vaccine(instance, policy, interventions, v_policy, seed=-1, **kwarg
         total_imbalance = np.sum(S[t] + E[t] + IA[t] + IY[t] + IH[t] + R[t] + D[t] + PA[t] + PY[t] + ICU[t]) - np.sum(N)
        
         
-        assert np.abs(total_imbalance) < 1E-2, f'fPop unbalanced {total_imbalance}' 
+        assert np.abs(total_imbalance) < 1E-2, f'fPop unbalanced {total_imbalance} at time {instance.cal.calendar[t]}, {t}' 
     
     moving_avg_len = config['moving_avg_len']
     ToIHT_temp = np.sum(ToIHT, axis=(1, 2))[:T]
@@ -329,7 +329,11 @@ def simulate_t(instance, v_policy, policy, interventions, t_date, epi_rand, epi_
             rate_IHR = discrete_approx((1 - epi.nu)*epi.gamma_IH, step_size)
             rate_ICUD = discrete_approx(epi.nu_ICU*epi.mu_ICU, step_size)
             rate_ICUR = discrete_approx((1 - epi.nu_ICU)*epi.gamma_ICU, step_size)
+            
+            if t >= 711: #date corresponding to 02/07/2022
+                rate_immune = discrete_approx(epi.immune_evasion, step_size) 
 
+                
             for _t in range(step_size):
                 # Dynamics for dS
 
@@ -351,14 +355,35 @@ def simulate_t(instance, v_policy, policy, interventions, t_date, epi_rand, epi_
                         dSprob = np.sum(temp3, axis=(2, 3))
                         dSprob_sum = dSprob_sum + dSprob
                         
-      
-                    _dS = rv_gen(rnd_stream, v_groups._S[_t], (1 - v_groups.v_beta_reduct)*dSprob_sum)
-           
-                    v_groups._S[_t + 1] = v_groups._S[_t] - _dS #+ v_policy(t, v_groups)
+                    if t >= 711 and v_groups.v_name == 'v_2':#date corresponding to 02/07/2022
+                        _dS = rv_gen(rnd_stream, v_groups._S[_t], rate_immune + (1 - v_groups.v_beta_reduct)*dSprob_sum)  
+                            # Dynamics for E
+                        if types == 'int':
+                            _dSE = np.round( _dS * ((1 - v_groups.v_beta_reduct)*dSprob_sum) / (rate_immune + (1 - v_groups.v_beta_reduct)*dSprob_sum))
+                        else:
+                            _dSE = _dS * ((1 - v_groups.v_beta_reduct)*dSprob_sum) / (rate_immune + (1 - v_groups.v_beta_reduct)*dSprob_sum)
+    
+                        E_out = rv_gen(rnd_stream, v_groups._E[_t], rate_E)
+                        v_groups._E[_t + 1] = v_groups._E[_t] + _dSE - E_out
+                            
+                        _dSR = _dS - _dSE
+                        v_policy._vaccine_groups[3]._S[_t + 1] = v_policy._vaccine_groups[3]._S[_t + 1] + _dSR
+                        #breakpoint()
+                    else:
+                        _dS = rv_gen(rnd_stream, v_groups._S[_t], (1 - v_groups.v_beta_reduct)*dSprob_sum)
+                        # Dynamics for E
+                        E_out = rv_gen(rnd_stream, v_groups._E[_t], rate_E)
+                        v_groups._E[_t + 1] = v_groups._E[_t] + _dS - E_out
+                    
+                    
+                    if t >= 711 and v_groups.v_name != 'v_3':
+                        immune_escape_R = rv_gen(rnd_stream, v_groups._R[_t], rate_immune)
+                        v_policy._vaccine_groups[3]._S[_t + 1] = v_policy._vaccine_groups[3]._S[_t + 1] + immune_escape_R
+                    
+                    v_groups._S[_t + 1] = v_groups._S[_t + 1] + v_groups._S[_t] - _dS #+ v_policy(t, v_groups)
                 
-                    # Dynamics for E
-                    E_out = rv_gen(rnd_stream, v_groups._E[_t], rate_E)
-                    v_groups._E[_t + 1] = v_groups._E[_t] + _dS - E_out
+                    # if t >= 711:
+                    #     breakpoint()
           
                     # Dynamics for PY
                     EPY = rv_gen(rnd_stream, E_out, epi.tau * ( 1 - v_groups.v_tau_reduct))
@@ -396,9 +421,18 @@ def simulate_t(instance, v_policy, policy, interventions, t_date, epi_rand, epi_
                     v_groups._ToICU[_t] = v_groups._IYICU[_t] + v_groups._IHICU[_t]
                     v_groups._ToIHT[_t] = v_groups._IYICU[_t] + v_groups._IYIH[_t]
                     
+                    
+                        
+                        
                     # Dynamics for R
-                    v_groups._R[_t + 1] = v_groups._R[_t] + IHR + IYR + IAR + ICUR
-                
+                    #v_groups._R[_t + 1] = v_groups._R[_t] + IHR + IYR + IAR + ICUR
+                    if t >= 711 and v_groups.v_name != 'v_3':
+                        v_groups._R[_t + 1] = v_groups._R[_t] + IHR + IYR + IAR + ICUR - immune_escape_R
+                    else:
+                        v_groups._R[_t + 1] = v_groups._R[_t] + IHR + IYR + IAR + ICUR 
+                        
+                     
+                        
                     # Dynamics for D
                     v_groups._D[_t + 1] = v_groups._D[_t] + ICUD + IYD
                     v_groups._ToICUD[_t] = ICUD
@@ -406,6 +440,8 @@ def simulate_t(instance, v_policy, policy, interventions, t_date, epi_rand, epi_
                     v_groups._ToIA[_t] = PAIA
                     v_groups._ToIY[_t] = PYIY
                     
+                    
+                        
             
                     
             for idx, v_groups in enumerate(v_policy._vaccine_groups):

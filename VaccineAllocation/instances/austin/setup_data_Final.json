@@ -76,6 +76,7 @@
     "new_variant":true,
     "new_variant_beta": 1.55,
     "immune_escape_rate": 0.15,
+    "immune_evasion": 0.00834,
     "_sigma_E": [
       "rnd_inverse",
       "sigma_E",
