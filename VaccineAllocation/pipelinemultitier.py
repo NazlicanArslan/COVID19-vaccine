@@ -564,16 +564,16 @@ if __name__ == "__main__":
     for instance_raw in fileList:
         if ".p" in instance_raw:
             if "austin" in instance_raw:
-                file_path = "instances/austin/austin_real_hosp_updated.csv"
+                file_path = "instances/austin/austin_real_hosp_updated_plotting.csv"
                 start_date = dt(2020,2,28)
-                end_history = dt(2022,2,7)
+                end_history = dt(2022,2,14)
                 real_hosp = read_hosp(file_path, start_date)
                 hosp_beds_list = None
-                file_path = "instances/austin/austin_hosp_ad_updated.csv"
+                file_path = "instances/austin/austin_hosp_ad_updated_plotting.csv"
                 hosp_ad = read_hosp(file_path, start_date, "admits")
                 file_path = "instances/austin/austin_real_case.csv"
                 case_ad = read_hosp(file_path, start_date, "admits")
-                file_path = "instances/austin/austin_real_icu_updated.csv"
+                file_path = "instances/austin/austin_real_icu_updated_plotting.csv"
                 real_icu = read_hosp(file_path, start_date)
                 iht_limit = 2000
                 icu_limit = 500
