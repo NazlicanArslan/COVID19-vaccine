@@ -834,9 +834,9 @@ def plot_multi_tier_sims(instance_name,
         ax2.set_ylabel(compartment_names[plot_right_axis[0]])
     
     # Axis ticks
-    ax1.xaxis.set_ticks([t for t, d in enumerate(cal.calendar) if (d.day == 1 and t < T)])
+    ax1.xaxis.set_ticks([t for t, d in enumerate(cal.calendar) if (d.day == 1 and d.month % 2 == 1 and t < T)])
     ax1.xaxis.set_ticklabels(
-        [f' {py_cal.month_abbr[d.month]} ' for t, d in enumerate(cal.calendar) if (d.day == 1 and t < T)],
+        [f' {py_cal.month_abbr[d.month]} ' for t, d in enumerate(cal.calendar) if (d.day == 1 and d.month % 2 == 1 and t < T)],
         rotation=0,
         fontsize=22)
     for tick in ax1.xaxis.get_major_ticks():
@@ -886,6 +886,14 @@ def plot_multi_tier_sims(instance_name,
                             annotation_clip=True,
                             fontsize=text_size - 2)
     
+    if 810 <= T:
+        actions_ax.annotate('2022',
+                            xy=(810, 0),
+                            xycoords='data',
+                            color='k',
+                            annotation_clip=True,
+                            fontsize=text_size - 2) 
+        
     # Order of layers
     ax1.set_zorder(policy_ax.get_zorder() + 10)  # put ax in front of policy_ax
     ax1.patch.set_visible(False)  # hide the 'canvas'
@@ -1431,9 +1439,9 @@ def stack_plot(instance_name,
         ax2.set_ylabel(compartment_names[plot_right_axis[0]])
     
     # Axis ticks
-    ax1.xaxis.set_ticks([t for t, d in enumerate(cal.calendar) if (d.day == 1 and t < T)])
+    ax1.xaxis.set_ticks([t for t, d in enumerate(cal.calendar) if (d.day == 1 and d.month % 2 == 1 and t < T)])
     ax1.xaxis.set_ticklabels(
-        [f' {py_cal.month_abbr[d.month]} ' for t, d in enumerate(cal.calendar) if (d.day == 1 and t < T)],
+        [f' {py_cal.month_abbr[d.month]} ' for t, d in enumerate(cal.calendar) if (d.day == 1 and d.month % 2 == 1 and t < T)],
         rotation=0,
         fontsize=22)
     for tick in ax1.xaxis.get_major_ticks():
@@ -1481,6 +1489,13 @@ def stack_plot(instance_name,
                             color='k',
                             annotation_clip=True,
                             fontsize=text_size - 2)
+    if 810 <= T:
+        actions_ax.annotate('2022',
+                            xy=(810, 0),
+                            xycoords='data',
+                            color='k',
+                            annotation_clip=True,
+                            fontsize=text_size - 2)    
     
     # Order of layers
     ax1.set_zorder(policy_ax.get_zorder() + 10)  # put ax in front of policy_ax
