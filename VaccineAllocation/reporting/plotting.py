@@ -25,7 +25,7 @@ import csv
 plt.rcParams['hatch.linewidth'] = 3.0
 
 colors = {'S': 'b', 'S0': 'b', 'S1': 'b', 'S2': 'b',  'S3': 'b', 'E': 'y', 'IA': 'c', 'IY': 'm', 'IH': 'k', 'R': 'g', 'D': 'k', 'ToIHT': 'teal', 'ToIHT_moving': 'teal', 'ToIA': 'teal', 'ToIY_moving': 'teal','ToIHT_unvac': 'teal', 'ToIHT_vac': 'teal', 'ICU': 'k', 'ICU_ratio': 'k','ToICU': 'teal', 'IHT': 'k', 'ITot': 'k'}
-light_colors = {'IH':'silver','ToIHT':'paleturquoise', 'ToIHT_moving':'paleturquoise', 'D': 'teal', 'ToIHT_unvac':'paleturquoise', 'ToIHT_unvac':'paleturquoise','ToIA':'paleturquoise', 'ToIY_moving': 'paleturquoise', 'ICU':'silver', 'ICU_ratio':'silver','ToICU': 'paleturquoise', 'IHT': 'silver', 'ITot': 'silver', 'S': 'blue', 'S0': 'blue', 'S1': 'blue', 'S2': 'blue', 'S3': 'blue'}
+light_colors = {'IH':'silver','ToIHT':'paleturquoise', 'ToIHT_moving':'paleturquoise', 'D': 'teal', 'ToIHT_unvac':'paleturquoise', 'ToIHT_unvac':'paleturquoise','ToIA':'paleturquoise', 'ToIY_moving': 'paleturquoise', 'ICU':'silver', 'ICU_ratio':'silver','ToICU': 'paleturquoise', 'IHT': 'silver', 'ITot': 'silver', 'S': 'blue', 'S0': 'blue', 'S1': 'blue', 'S2': 'blue', 'S3': 'purple'}
 l_styles = {'sim': '-', 'opt': '--'}
 compartment_names = {
     'ITot': 'Total Infectious',
@@ -843,7 +843,7 @@ def plot_multi_tier_sims(instance_name,
     # Axis limits
     ax1.set_ylim(0, max_y_lim_1)
     if ax2 is not None:
-        ax2.set_ylim(0, 1)
+        ax2.set_ylim(0, 0.5)
     policy_ax.set_ylim(0, 1)
     
     # plot a vertical line for the t_start
