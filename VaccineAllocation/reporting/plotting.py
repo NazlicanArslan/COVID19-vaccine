@@ -38,7 +38,7 @@ compartment_names = {
     'S0': 'S Group 0',
     'S1': 'S Group 1',
     'S2': 'S Group 2',
-    'S3': 'S Group 3',
+    'S3': "Susceptible with Waned Immunity",
     'ICU': 'COVID-19 ICU Patients',
     'IHT': 'COVID-19 Hospitalizations',
     'ToICU': 'Daily COVID-19 ICU Admissions',
@@ -134,7 +134,7 @@ def change_avg(all_st, min_st ,max_st, mean_st, nday_avg):
     
     # change all statistics to n-day average
     for v in all_st_copy.keys():
-        if v not in ['z', 'tier_history']:
+        if v not in ['z', 'tier_history'] and v != "S3":
             for i in range(len(all_st_copy[v])):
                 for t in range(len(all_st_copy[v][i])):
                     all_st_copy[v][i][t] = np.mean(all_st[v][i][np.maximum(t-nday_avg,0):t+1])
@@ -437,7 +437,7 @@ def plot_multi_tier_sims(instance_name,
                                  color='b',
                                  annotation_clip=True,
                                  fontsize=text_size + 2)
-                    
+      
         if v == 'ToIHT_unvac':
                 if real_new_admission is not None:
                     real_h_plot = ax1.scatter(range(len(real_new_admission_unvax)), real_new_admission_unvax, color='maroon', label='New hospital admission',zorder=100,s=15)
@@ -489,11 +489,12 @@ def plot_multi_tier_sims(instance_name,
                 if kwargs["plot_ACS_triggers"]:
                     ax1.plot([policy.acs_thrs]*T, color='k', linewidth=5)
     for v in plot_right_axis:
-        max_y_lim_2 = np.maximum(max_y_lim_2, np.max(max_st[v]))
-        label_v = compartment_names[v]
-        v_a = ax2.plot(mean_st[v].T, c=colors[v], linestyle=l_style, label=label_v)
-        plotted_lines.append(v_a[0])
-        ax2.fill_between(range(T), min_st[v], max_st[v], color=colors[v], linestyle=l_style, alpha=0.5)
+        # max_y_lim_2 = np.maximum(max_y_lim_2, np.max(max_st[v]))
+        # label_v = compartment_names[v]
+        # v_a = ax2.plot(mean_st[v].T/max(mean_st[v].T), c=colors[v], linestyle=l_style, label=label_v)
+        # plotted_lines.append(v_a[0])
+
+        # ax2.fill_between(range(T), min_st[v], max_st[v], color=colors[v], linestyle=l_style, alpha=0.5)
         if v == 'IH':
             max_y_lim_2 = np.maximum(roundup(hosp_beds, 100), max_y_lim_2)
             ax2.hlines(hosp_beds, 0, T, color='r', linestyle='--', label='N. of beds')
@@ -515,6 +516,26 @@ def plot_multi_tier_sims(instance_name,
                              textcoords='data',
                              color='b',
                              annotation_clip=True)
+        if v == "S3":
+            max_y_lim_2 = np.maximum(max_y_lim_2, 1)
+            label_v = compartment_names[v]
+           # breakpoint()
+            t_range = np.arange(t_start, T)
+            if 'ToIHT_moving' in plot_left_axis:
+                #breakpoint()
+                v_a = ax2.plot(t_range, all_states_ts[v].T[t_start:T]/population, c=light_colors[v], linestyle=l_style, label=label_v)
+                plotted_lines.append(v_a[0])
+                # v_a = ax2.plot(t_range, mean_st[v].T[t_start:T]/population, c=colors[v], linestyle=l_style, label=label_v)
+                # plotted_lines.append(v_aa[0])
+            else:
+                v_a = ax2.plot(t_range, all_st[v].T[t_start:T]/population, c=light_colors[v], linestyle=l_style, label=label_v)
+                plotted_lines.append(v_a[0])
+                v_a = ax2.plot(t_range, mean_st[v].T[t_start:T]/population, c=colors[v], linestyle=l_style, label=label_v)
+                plotted_lines.append(v_aa[0])
+                
+            
+            #ax2.fill_between(range(T), min_st[v], max_st[v], color=colors[v], linestyle=l_style, alpha=0.5)
+                
                 # ax2.annotate('                                        ',
                 #              xy=(85, lockdown_threshold[85]),
                 #              xytext=xytext,
@@ -822,7 +843,7 @@ def plot_multi_tier_sims(instance_name,
     # Axis limits
     ax1.set_ylim(0, max_y_lim_1)
     if ax2 is not None:
-        ax2.set_ylim(0, roundup(max_y_lim_2, 1000))
+        ax2.set_ylim(0, 1)
     policy_ax.set_ylim(0, 1)
     
     # plot a vertical line for the t_start
@@ -831,7 +852,7 @@ def plot_multi_tier_sims(instance_name,
     # Axis format and names
     ax1.set_ylabel(" / ".join((compartment_names[v] for v in plot_left_axis)), fontsize=text_size)
     if ax2 is not None:
-        ax2.set_ylabel(compartment_names[plot_right_axis[0]])
+        ax2.set_ylabel(" / ".join((compartment_names[v] for v in plot_right_axis)), fontsize=text_size)
     
     # Axis ticks
     ax1.xaxis.set_ticks([t for t, d in enumerate(cal.calendar) if (d.day == 1 and d.month % 2 == 1 and t < T)])
