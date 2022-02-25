@@ -76,7 +76,7 @@
     "new_variant":true,
     "new_variant_beta": 1.55,
     "immune_escape_rate": 0.15,
-    "immune_evasion": 0.00834,
+    "immune_evasion": 0.001899033,
     "_sigma_E": [
       "rnd_inverse",
       "sigma_E",
@@ -537,6 +537,10 @@
     [
       "2021-05-26 00:00:00",
       "2021-08-23 00:00:00"
+    ],
+    [
+      "2022-05-30 00:00:00",
+      "2022-08-15 00:00:00"
     ]
   ]
 }

@@ -216,7 +216,7 @@ def icu_pipeline(file_path, instance_name, real_hosp=None, real_admit=None, hosp
                             profiles, ['sim'] * len(profiles),
                             real_hosp,
                             plot_left_axis=['ToIHT_moving'],
-                            plot_right_axis=["S3"],
+                            plot_right_axis=[],
                             T=T,
                             interventions=interventions,
                             show=True,
@@ -566,7 +566,7 @@ if __name__ == "__main__":
             if "austin" in instance_raw:
                 file_path = "instances/austin/austin_real_hosp_updated_plotting.csv"
                 start_date = dt(2020,2,28)
-                end_history = dt(2022,2,14)
+                end_history = dt(2022,2,23)
                 real_hosp = read_hosp(file_path, start_date)
                 hosp_beds_list = None
                 file_path = "instances/austin/austin_hosp_ad_updated_plotting.csv"
@@ -582,7 +582,7 @@ if __name__ == "__main__":
                 hosp_beds_list = [1100]
                 icu_beds_list = None
                 t_start =(end_history - start_date).days
-                central_id_path = 0
+                central_id_path = 25
                 acs_type = 'ICU'
                 
             instance_name = instance_raw[:-2]

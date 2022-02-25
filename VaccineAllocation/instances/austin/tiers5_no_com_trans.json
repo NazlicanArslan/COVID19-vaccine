@@ -1,5 +1,6 @@
 {
 "type": "constant",
+"community_tranmission": null,
 "tiers": [
     {
         "name": "Stage 2",

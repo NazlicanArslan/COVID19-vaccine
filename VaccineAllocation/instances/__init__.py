@@ -199,6 +199,7 @@ class Tier:
             tier_data = json.load(tier_input)
             assert tier_data['type'] in ['constant','step', 'linear'], "Tier type unknown."
             self.tier_type = tier_data['type']
+            self.community_transmision = tier_data['community_tranmission']
             self.tier = tier_data['tiers']
 
 

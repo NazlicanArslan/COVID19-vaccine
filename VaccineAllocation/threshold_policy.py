@@ -89,6 +89,7 @@ def policy_multi_iterator(instance,
                           obj_fun,
                           interventions,
                           policy_class='constant', 
+                          community_transmision='green',
                           fixed_policy=None,
                           fixed_vaccine_policy=None,  
                           fo_tiers=None, 
@@ -166,7 +167,7 @@ def policy_multi_iterator(instance,
                 yield instance, mt_policy, obj_fun, interventions, fixed_vaccine_policy, -1, kwargs
         else:
             for thrs in build_multi_tier_policy_candidates(instance, tiers, threshold_type=policy_class, lambda_start=policy_ub):
-                mt_policy = MultiTierPolicy(instance, tiers, thrs, policy_class)
+                mt_policy = MultiTierPolicy(instance, tiers, thrs, policy_class, community_transmision)
                 mt_policy.set_tier_history(SD_state.copy())
                 mt_policy.set_intervention_history(z_ini.copy())
                 yield instance, mt_policy, obj_fun, interventions, fixed_vaccine_policy, -1, kwargs

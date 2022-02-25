@@ -254,7 +254,7 @@ def plot_multi_tier_sims(instance_name,
     
     for cap in [200, 175, 150]:
         ICU_cap_exceed = sum(1 for p in profiles if any(val> cap for val in np.sum(p['ICU'], axis=(1, 2))[t_start:t_start+40])) 
-        print('number of paths that exceed icu capacity of ', cap, ICU_cap_exceed/3)
+        print('Number of paths that exceed icu capacity of ', cap, ': ', np.round(ICU_cap_exceed/3,2),"%")
     print(instance.cal.calendar[t_start])
     print('')
 

@@ -191,13 +191,15 @@ class MultiTierPolicy():
             lockdown_thresholds (list of list): a list with the thresholds for every
                 tier. The list must have n-1 elements if there are n tiers. Each threshold
                 is a list of values for evert time step of simulation.
-            threshold_type: functional form of the threshold (options are in THRESHOLD_TYPES)
+            tier_type: functional form of the threshold (options are in THRESHOLD_TYPES)
+            community_tranmission: CDC's community tranmission threshold for staging.
     '''
-    def __init__(self, instance, tiers, lockdown_thresholds, tier_type):
+    def __init__(self, instance, tiers, lockdown_thresholds, tier_type, community_tranmission):
        
         assert len(tiers) == len(lockdown_thresholds)
         self.tiers = tiers
         self.tier_type = tier_type
+        self.community_tranmission = community_tranmission
         self.lockdown_thresholds = lockdown_thresholds
         self.lockdown_thresholds_ub = [lockdown_thresholds[i] for i in range(1, len(lockdown_thresholds))]
         self.lockdown_thresholds_ub.append([np.inf] * len(lockdown_thresholds[0]))
@@ -210,13 +212,13 @@ class MultiTierPolicy():
         self.red_counter = 0
     
     @classmethod
-    def constant_policy(cls, instance, tiers, constant_thresholds):
+    def constant_policy(cls, instance, tiers, constant_thresholds, community_tranmission):
         T = instance.T
         lockdown_thresholds = [[ct] * T for ct in constant_thresholds]
-        return cls(instance, tiers, lockdown_thresholds, 'constant')
+        return cls(instance, tiers, lockdown_thresholds, 'constant', community_tranmission)
     
     @classmethod
-    def step_policy(cls, instance, tiers, constant_thresholds, change_date):
+    def step_policy(cls, instance, tiers, constant_thresholds, change_date, community_tranmission):
         lockdown_thresholds = []
         for tier_ix, tier in enumerate(tiers):
             tier_thres = []
@@ -226,10 +228,10 @@ class MultiTierPolicy():
                 else:
                     tier_thres.append(constant_thresholds[1][tier_ix])
             lockdown_thresholds.append(tier_thres)
-        return cls(instance, tiers, lockdown_thresholds, 'step')
+        return cls(instance, tiers, lockdown_thresholds, 'step', community_tranmission)
     
     @classmethod
-    def linear_policy(cls, instance, tiers, constant_thresholds, change_date, slope):
+    def linear_policy(cls, instance, tiers, constant_thresholds, change_date, slope, community_tranmission):
         '''
         Linear threshold funtion.
         Parameters
@@ -249,10 +251,10 @@ class MultiTierPolicy():
                                 [constant_thresholds[i] + (slope) * (t + 1) for t in range(T_slope)] 
                                 for i in range(1,len(constant_thresholds))]
 
-        return cls(instance, tiers, lockdown_thresholds, 'linear')
+        return cls(instance, tiers, lockdown_thresholds, 'linear', community_tranmission)
     
     def deep_copy(self):
-        p = MultiTierPolicy(self._instance, self.tiers, self.lockdown_thresholds, self.tier_type)
+        p = MultiTierPolicy(self._instance, self.tiers, self.lockdown_thresholds, self.tier_type, self.community_tranmission)
         p.set_tier_history(self._tier_history_copy)
         p.set_intervention_history(self._intervention_history_copy)
         return p
@@ -353,19 +355,24 @@ class MultiTierPolicy():
             effective_threshold[tier_ix] <= criStat_avg < effective_threshold_ub[tier_ix] 
             for tier_ix in effective_tiers].index(True)]
         
-        # if new_tier == 0:
-        #     if ToIY_avg > 5:
-        #         new_tier = current_tier
-        
-        if new_tier == 0:
-            if ToIY_avg > 5:
-                if ToIY_avg < 10:
-                    new_tier = 1
-                else :
+        # Check if community tranmission rate is included:
+        if self.community_tranmission == "blue":
+            if new_tier == 0:
+                if ToIY_avg > 5:
+                    if ToIY_avg < 10:
+                        new_tier = 1
+                    else :
+                        new_tier = 2
+            elif new_tier == 1:
+                if ToIY_avg > 10:
                     new_tier = 2
-        elif new_tier == 1:
-            if ToIY_avg > 10:
-                new_tier = 2
+        elif self.community_tranmission == "green":
+            if new_tier == 0:
+                if ToIY_avg > 5:
+                    if ToIY_avg < 10:
+                        new_tier = 1
+                    else :
+                        new_tier = 2
                 
         if new_tier > current_tier:  # bump to the next tier
             t_end = np.minimum(t + self.tiers[new_tier]['min_enforcing_time'], T)

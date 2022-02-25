@@ -108,6 +108,6 @@ if __name__ == '__main__':
                            initial=args.initial)
   
     instance_name = f'{instance.city}'   
-    file_path = instances_path  / f'{instance_name}' / 'transmission_new.csv'
+    file_path = instances_path  / f'{instance_name}' / 'transmission_lsq.csv'
     transmision.to_csv(file_path, index = False)
     #transmisison.to_csv(r'file_path', index = False)

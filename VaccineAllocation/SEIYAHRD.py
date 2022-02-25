@@ -18,8 +18,9 @@ import copy
 def immune_escape(immune_escape_rate, t, types, v_policy, step_size):
 
     '''
-        This function move recovered and vaccinated individuals to waning efficacy susceptible 
-        compartment after omicron become the prevelant virus type.
+        This function move recovered and vaccinated individuals to waning 
+        efficacy susceptible compartment after omicron become the prevelant 
+        virus type.
     '''
     for idx, v_groups in enumerate(v_policy._vaccine_groups):
         if types == 'int':
@@ -115,7 +116,6 @@ def simulate_vaccine(instance, policy, interventions, v_policy, seed=-1, **kwarg
         kwargs["acs_criStat"] = eval(kwargs["acs_policy_field"])[:t]
         kwargs["t_start"] = len(instance.real_hosp)
        
-       # breakpoint()
         # Get dynamic intervention and corresponding contact matrix
         k_t, kwargs = policy(t, N, criStat=eval(kwargs["policy_field"])[:t], IH=IH[:t], ToIY=ToIY[:t], **kwargs)
         

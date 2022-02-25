@@ -62,13 +62,13 @@ if __name__ == '__main__':
     selected_policy = None
     if tiers.tier_type == 'constant':
         if given_threshold is not None:
-            selected_policy = MTP.constant_policy(instance, tiers.tier, given_threshold)
+            selected_policy = MTP.constant_policy(instance, tiers.tier, given_threshold, tiers.community_transmision)
     elif tiers.tier_type == 'step':
         if (given_threshold is not None) and (given_date is not None):
-            selected_policy = MTP.step_policy(instance, tiers.tier, given_threshold, given_date)
+            selected_policy = MTP.step_policy(instance, tiers.tier, given_threshold, given_date, tiers.community_transmision)
     elif tiers.tier_type == 'linear':
         if given_threshold is not None:
-            selected_policy = MTP.linear_policy(instance, tiers.tier, given_threshold, given_date, args.gs)
+            selected_policy = MTP.linear_policy(instance, tiers.tier, given_threshold, given_date, args.gs, tiers.community_transmision)
       
     # if a vaccine allocation is given, then it carries out a specific task
     # if not, then search for a policy
@@ -92,7 +92,7 @@ if __name__ == '__main__':
             selected_vaccine_policy = VAP.vaccine_policy(instance, vaccines, 'deterministic')
             
     task_str = str(selected_policy) if selected_policy is not None else f'opt{len(tiers.tier)}'
-    instance_name = f'{args.f_config[:-5]}_{args.t[:-5]}_{task_str}_{args.tr}_{args.v_allocation}'
+    instance_name = f'{args.f_config[:-5]}_{args.t[:-5]}_{task_str}_{args.tr}_{args.f}'
     # read in the policy upper bound
     if args.pub is not None:
         policy_ub = eval(args.pub)
@@ -126,6 +126,7 @@ if __name__ == '__main__':
                                                                           n_replicas_test= n_replicas_test,
                                                                           instance_name= instance_name,   
                                                                           policy_class = tiers.tier_type,
+                                                                          community_transmision = tiers.community_transmision,
                                                                           policy=selected_policy,
                                                                           vaccine_policy= selected_vaccine_policy,
                                                                           mp_pool= mp_pool,
