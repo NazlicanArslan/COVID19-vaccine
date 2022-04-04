@@ -71,7 +71,7 @@ def residual_error(x_beta, **kwargs):
     real_death_from_hosp = kwargs['real_death_from_hosp']
     real_death_total = kwargs['real_death_total']
     selected_vaccine_policy = kwargs['selected_vaccine_policy']
-    
+    t_start = kwargs['t_start']
     #############Change the transmission reduction and cocconing accordingly
     beta = [ 0.052257,
              0.787752,
@@ -87,8 +87,9 @@ def residual_error(x_beta, **kwargs):
              0.6446,
              0.6869,
              0.7186,
-             x_beta[4],
-             x_beta[5]]
+             x_beta[5],
+             x_beta[6],
+             0.55]
     
     cocoon = [0,
               0.787752,
@@ -104,8 +105,9 @@ def residual_error(x_beta, **kwargs):
               0.6446,
               0.6869,
               0.7186,
-              x_beta[4],
-              x_beta[5]]
+              x_beta[5],
+              x_beta[6],
+              0.55]
 
     tr_reduc = []
     date_list = []
@@ -166,10 +168,10 @@ def residual_error(x_beta, **kwargs):
     selected_policy = None
     if tiers.tier_type == 'constant':
         if given_threshold is not None:
-            selected_policy = MTP.constant_policy(instance, tiers.tier, given_threshold)
+            selected_policy = MTP.constant_policy(instance, tiers.tier, given_threshold, tiers.community_transmision)
     elif tiers.tier_type == 'step':
         if (given_threshold is not None) and (given_date is not None):
-            selected_policy = MTP.step_policy(instance, tiers.tier, given_threshold, given_date)
+            selected_policy = MTP.step_policy(instance, tiers.tier, given_threshold, given_date, tiers.community_transmision)
     
     # Define additional variables included in the fit
     
@@ -177,7 +179,7 @@ def residual_error(x_beta, **kwargs):
     instance.epi.alpha2_omic = x_beta[1]
     instance.epi.alpha3_omic = x_beta[2]
     instance.epi.alpha4_omic= x_beta[3]
-    
+    instance.epi.immune_escape_rate = x_beta[4]
     print('new value: ', x_beta)
     selected_vaccine_policy.reset_vaccine_history(instance, -1)
   
@@ -205,37 +207,37 @@ def residual_error(x_beta, **kwargs):
     if instance.city == 'austin':
         hosp_benchmark = None
         real_hosp = [a_i - b_i for a_i, b_i in zip(instance.cal.real_hosp, real_icu)] 
-        hosp_benchmark = [sim_output['IH'][t].sum() for t in range(642, len(instance.cal.real_hosp))]
-        residual_error_IH = [a_i - b_i for a_i, b_i in zip(real_hosp[642:], hosp_benchmark)]
+        hosp_benchmark = [sim_output['IH'][t].sum() for t in range(t_start, len(instance.cal.real_hosp))]
+        residual_error_IH = [a_i - b_i for a_i, b_i in zip(real_hosp, hosp_benchmark)]
         
         
-        icu_benchmark = [sim_output['ICU'][t].sum() for t in range(642, len(instance.cal.real_hosp))]
+        icu_benchmark = [sim_output['ICU'][t].sum() for t in range(t_start, len(instance.cal.real_hosp))]
         w_icu = 1.5
-        residual_error_ICU = [a_i - b_i for a_i, b_i in zip(real_icu[642:], icu_benchmark)]
+        residual_error_ICU = [a_i - b_i for a_i, b_i in zip(real_icu, icu_benchmark)]
         residual_error_ICU = [element * w_icu for element in residual_error_ICU]
         residual_error_IH.extend(residual_error_ICU)
     
         w_iyih = 7.3*(1 - 0.10896) + 9.9*0.10896
-        daily_ad_benchmark = [sim_output['ToIHT'][t].sum() for t in range(642, len(instance.cal.real_hosp) - 1)] 
+        daily_ad_benchmark = [sim_output['ToIHT'][t].sum() for t in range(t_start, len(instance.cal.real_hosp) - 1)] 
         print('hospital admission: ', sum(daily_ad_benchmark))
-        residual_error_IYIH = [a_i - b_i for a_i, b_i in zip(hosp_ad[642:], daily_ad_benchmark)]
+        residual_error_IYIH = [a_i - b_i for a_i, b_i in zip(hosp_ad, daily_ad_benchmark)]
         residual_error_IYIH = [element * w_iyih for element in residual_error_IYIH]
         residual_error_IH.extend(residual_error_IYIH)
         
         w_d = w_iyih*5
-        daily_death_benchmark = [sim_output['D'][t+1].sum() - sim_output['D'][t].sum() for t in range(642, len(instance.cal.real_hosp) - 1)] 
+        daily_death_benchmark = [sim_output['D'][t+1].sum() - sim_output['D'][t].sum() for t in range(t_start, len(instance.cal.real_hosp) - 1)] 
         daily_death_benchmark.insert(0, 0)
         daily_death_benchmark = [sim_output['ToICUD'][t].sum() for t in range(len(instance.cal.real_hosp) - 1)] 
         daily_death_benchmark.insert(0, 0)
-        residual_error_death = [a_i - b_i for a_i, b_i in zip(real_death_from_hosp[642:], daily_death_benchmark)]
+        residual_error_death = [a_i - b_i for a_i, b_i in zip(real_death_from_hosp, daily_death_benchmark)]
         residual_error_death = [element * w_d for element in residual_error_death]
         residual_error_IH.extend(residual_error_death)     
         
         w_iyd = w_d
         real_toIYD = [a_i - b_i for a_i, b_i in zip(real_death_total, real_death_from_hosp)]
-        daily_toIYD_benchmark = [sim_output['ToIYD'][t].sum() for t in range(642, len(instance.cal.real_hosp) - 1)] 
+        daily_toIYD_benchmark = [sim_output['ToIYD'][t].sum() for t in range(t_start, len(instance.cal.real_hosp) - 1)] 
         daily_death_benchmark.insert(0, 0)
-        residual_error_death = [a_i - b_i for a_i, b_i in zip(real_toIYD[642:], daily_toIYD_benchmark)]
+        residual_error_death = [a_i - b_i for a_i, b_i in zip(real_toIYD, daily_toIYD_benchmark)]
         residual_error_death = [element * w_iyd for element in residual_error_death]
         residual_error_IH.extend(residual_error_death)  
     #breakpoint()
@@ -247,8 +249,8 @@ def least_squares_fit(initial_guess, kwargs):
     # Function that runs the least squares fit
     result = least_squares(residual_error,
                            initial_guess,
-                           bounds = ([0, 0, 0, 0, 0, 0],
-                                     [1, 1, 10, 1, 1, 1]),
+                           bounds = ([0, 0, 0, 0, 0, 0, 0],
+                                     [1, 1, 10, 1, 1, 1, 1]),
                            method='trf', verbose=2,
                            kwargs = kwargs)
     return result 
@@ -273,25 +275,22 @@ def run_fit(instance,
             policy_ub=None,
             method="lsq",
             dfo_obj=None,
-            initial=None):
+            initial=None,
+            start_date=None):
  
     if instance.city == 'austin':
         daily_admission_file_path = instance.path_to_data  / "austin_hosp_ad_updated.csv"
-        start_date = dt.datetime(2020,2,28)
         hosp_ad = read_hosp(daily_admission_file_path, start_date, "admits")
         
         daily_icu_file_path = instance.path_to_data  / "austin_real_icu_updated.csv"
-        start_date = dt.datetime(2020,2,28)
         real_icu = read_hosp(daily_icu_file_path, start_date)  
 
         daily_death_file_path = instance.path_to_data  / "austin_real_death_from_hosp_updated.csv"
-        start_date = dt.datetime(2020,2,28)
         real_death_from_hosp = read_hosp(daily_death_file_path, start_date) 
         
         daily_total_death_file_path = instance.path_to_data  / "austin_real_total_death.csv"
-        start_date = dt.datetime(2020,2,28)
         real_death_total = read_hosp(daily_total_death_file_path, start_date)          
-        #breakpoint()
+  
         #time blocks
         change_dates = [dt.date(2020, 2, 15),
                         dt.date(2020, 3, 24),
@@ -309,10 +308,11 @@ def run_fit(instance,
                         dt.date(2021, 9, 24),
                         dt.date(2021, 10, 25),
                         dt.date(2022, 1, 5),
-                        dt.date(2022, 2, 7)] 
+                        dt.date(2022, 3, 10),
+                        dt.date(2022, 3, 30)] 
 
   
-        x = np.array([0.7, 0.25, 3.5, 0, 0.58, 0.68])       
+        x = np.array([0.7, 0.25, 3.5, 0, 0.25, 0.55, 0.75])       
 
     selected_vaccine_policy = VAP.vaccine_policy(instance, vaccines, 'deterministic')
     
@@ -324,7 +324,8 @@ def run_fit(instance,
                'real_death_from_hosp': real_death_from_hosp,
                'real_death_total': real_death_total,
                'vaccines' : vaccines,
-               'selected_vaccine_policy': selected_vaccine_policy
+               'selected_vaccine_policy': selected_vaccine_policy,
+               't_start':instance.cal.calendar.index(start_date)
                }
     ########## ########## ##########
     #Run least squares and choose a method
@@ -348,8 +349,9 @@ def run_fit(instance,
              0.6446,
              0.6869,
              0.7186,
-             opt_tr_reduction[4],
-             opt_tr_reduction[5]])
+             opt_tr_reduction[5],
+             opt_tr_reduction[6],
+             0.55])
     
     cocoon = np.array([0,
               0.787752,
@@ -365,8 +367,9 @@ def run_fit(instance,
               0.6446,
               0.6869,
               0.7186,
-              opt_tr_reduction[4],
-              opt_tr_reduction[5]])
+              opt_tr_reduction[5],
+              opt_tr_reduction[6],
+              0.55])
                                                                                 
     betas = instance.epi.beta*(1 - (contact_reduction))
     end_date = []
@@ -379,6 +382,7 @@ def run_fit(instance,
     print('alpha2_omic=', opt_tr_reduction[1])
     print('alpha3_omic=', opt_tr_reduction[2])
     print('alpha4_omic=', opt_tr_reduction[3])
+    print('immune escape', opt_tr_reduction[4])
     
     #breakpoint()
     table = pd.DataFrame({'start_date': change_dates[:-1], 'end_date': end_date, 'contact_reduction': contact_reduction, 'beta': betas, 'cocoon': cocoon})

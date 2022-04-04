@@ -204,7 +204,7 @@ def simulate_vaccine(instance, policy, interventions, v_policy, seed=-1, **kwarg
     ToIY_temp = np.sum(ToIY, axis=(1, 2))[:T]
     ToIHT_moving = [ToIHT_temp[i: min(i + moving_avg_len, T)].mean() for i in range(T-moving_avg_len)]
     ToIY_moving = [ToIY_temp[i: min(i + moving_avg_len, T)].sum()* 100000/np.sum(N, axis=(0,1)) for i in range(T-moving_avg_len)] 
-    ICU_ratio = np.sum(ICU, axis=(1, 2))[:T]/(np.sum(ICU, axis=(1, 2))[:T] + np.sum(IH, axis=(1, 2))[:T])
+    #ICU_ratio = np.sum(ICU, axis=(1, 2))[:T]/(np.sum(ICU, axis=(1, 2))[:T] + np.sum(IH, axis=(1, 2))[:T])
   
     output = {
         'S': S,
@@ -244,8 +244,7 @@ def simulate_vaccine(instance, policy, interventions, v_policy, seed=-1, **kwarg
         'IH_vac': IH_vac,
         'ICU_unvac': ICU_unvac,
         'ToIHT_unvac': ToIHT_unvac,
-        'IH_unvac': IH_unvac,
-        'ICU_ratio': ICU_ratio
+        'IH_unvac': IH_unvac
         }
 
     return output

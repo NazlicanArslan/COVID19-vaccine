@@ -64,10 +64,10 @@ if __name__ == '__main__':
     selected_policy = None
     if tiers.tier_type == 'constant':
         if given_threshold is not None:
-            selected_policy = MTP.constant_policy(instance, tiers.tier, given_threshold)
+            selected_policy = MTP.constant_policy(instance, tiers.tier, given_threshold, tiers.community_transmision)
     elif tiers.tier_type == 'step':
         if (given_threshold is not None) and (given_date is not None):
-            selected_policy = MTP.step_policy(instance, tiers.tier, given_threshold, given_date)
+            selected_policy = MTP.step_policy(instance, tiers.tier, given_threshold, given_date, tiers.community_transmision)
             
     # if a vaccine allocation is given, then it carries out a specific task
     # if not, then search for a policy
@@ -105,7 +105,8 @@ if __name__ == '__main__':
                            policy_ub=policy_ub,
                            method="lsq",
                            dfo_obj=args.df_obj,
-                           initial=args.initial)
+                           initial=args.initial,
+                           start_date=dt.datetime(2021,10,25))
   
     instance_name = f'{instance.city}'   
     file_path = instances_path  / f'{instance_name}' / 'transmission_lsq.csv'
