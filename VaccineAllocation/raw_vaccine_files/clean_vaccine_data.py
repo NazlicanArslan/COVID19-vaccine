@@ -105,7 +105,7 @@ def clean_county_age_data(file_name, sheet_name):
 
 file_list = sorted(os.listdir())
 #file_list=file_list[49:-5]
-file_list=file_list[-30:-5]
+file_list=file_list[-50:-5]
 
 with open('austin_first_dose.csv', 'w', newline='') as file:
 
