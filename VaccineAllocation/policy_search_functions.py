@@ -53,7 +53,6 @@ def trigger_policy_search(instance,
     print(t_start)
     
     selected_vaccine_policy = vaccine_policy
-    #breakpoint()
     # Build an iterator of all the candidate trigger policies (with given fixed vaccine policy) to be simulated by simulate_p
     sim_configs = policy_multi_iterator(instance,
                                         tiers,
@@ -68,7 +67,6 @@ def trigger_policy_search(instance,
                                         policy_ub = policy_ub)
     
     # Launch parallel simulation
-    
     all_outputs = simulate_p(mp_pool, sim_configs)
     
     logger.info(f'Simulated candidates: {len(all_outputs)}: {profile_log["simulate_p"]}')
@@ -76,9 +74,8 @@ def trigger_policy_search(instance,
     # Search of the best feasible candidate
     best_cost, best_sim, best_policy, best_params = np.Inf, None, None, None
     hosp_benchmark = instance.real_hosp
-    
-    if policy is not None:
-        # if fixed policy is given, skip search:
+    if len(all_outputs) == 1:   
+        # Skip search if there is only one candidate
         sim_output, cost, best_policy, _vac_policy, seed_0, kwargs_out = all_outputs[0]
         best_cost = cost
         best_sim = sim_output
@@ -439,7 +436,7 @@ def trigger_policy_search2(instance,
     best_cost, best_sim, best_policy, best_params = np.Inf, None, None, None
     hosp_benchmark = instance.real_hosp
     
-    if policy is not None:
+    if len(all_outputs) == 1: 
         # if fixed policy is given, skip search:
         sim_output, cost, best_policy, _vac_policy, seed_0, kwargs_out = all_outputs[0]
         best_cost = cost

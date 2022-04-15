@@ -173,8 +173,244 @@ def build_ACS_policy_candidates(instance, tiers, acs_bounds, acs_time_bounds, th
         return threshold_candidates
     else:
         raise NotImplementedError
-   
+
+def build_CDC_policy_thresholds(instance, tiers):
+    """
+    Currently there is no optimization on CDC system.
+    Implement the existing system. 
+    Assuming only one candidate threshold for each metric.
+    """
     
+    nonsurge_staffed_bed, surge_staffed_bed = {}, {}
+    nonsurge_hosp_adm,surge_hosp_adm = {}, {}
+    for id_t, tier in enumerate(tiers):
+        nonsurge_staffed_bed[id_t] = tier["nonsurge_thresholds"]["staffed_bed"][0]
+        nonsurge_hosp_adm[id_t] = tier["nonsurge_thresholds"]["hosp_adm"][0]
+        
+        surge_staffed_bed[id_t] = tier["surge_thresholds"]["staffed_bed"][0]
+        surge_hosp_adm[id_t] = tier["surge_thresholds"]["hosp_adm"][0]
+
+    nonsurge_thresholds = {"hosp_adm":nonsurge_hosp_adm, "staffed_bed":nonsurge_staffed_bed}
+    surge_thresholds = {"hosp_adm":surge_hosp_adm, "staffed_bed":surge_staffed_bed}   
+      
+    nonsurge_hosp_adm_ub = [nonsurge_hosp_adm[i] for i in range(1, len(nonsurge_hosp_adm))]
+    nonsurge_hosp_adm_ub.append(np.inf)
+    nonsurge_staffed_bed_ub = [nonsurge_staffed_bed[i] for i in range(1, len(nonsurge_staffed_bed))]
+    nonsurge_staffed_bed_ub.append(np.inf)
+    surge_hosp_adm_ub =[surge_hosp_adm[i] for i in range(1, len(surge_hosp_adm))]
+    surge_hosp_adm_ub.append(np.inf)
+    surge_staffed_bed_ub = [surge_staffed_bed[i] for i in range(1, len(surge_staffed_bed))]
+    surge_staffed_bed_ub.append(np.inf) 
+    
+    nonsurge_thresholds_ub = {"hosp_adm":nonsurge_hosp_adm_ub, "staffed_bed":nonsurge_staffed_bed_ub}
+    surge_thresholds_ub    = {"hosp_adm":surge_hosp_adm_ub, "staffed_bed":surge_staffed_bed_ub}
+
+    return nonsurge_thresholds, surge_thresholds, nonsurge_thresholds_ub, surge_thresholds_ub
+    
+class CDCTierPolicy():
+    """
+    CDC's community levels. CDC system includes three tiers. Green and orange
+    stages are deprecated but maintained for code consitency with our system.
+    """
+    def __init__(self, instance, 
+                 tiers, 
+                 case_threshold, 
+                 nonsurge_thresholds, 
+                 surge_thresholds,
+                 nonsurge_thresholds_ub, 
+                 surge_thresholds_ub):
+        """
+        instance : (Instance) data instance
+        tiers (list of dict): a list of the tiers characterized by a dictionary
+                with the following entries:
+                    {
+                        "transmission_reduction": float [0,1)
+                        "cocooning": float [0,1)
+                        "school_closure": int {0,1}
+                    } 
+        case_thresholds : (Surge threshold. New COVID-19 Cases Per 100,000 people 
+                          in the past 7 days
+        (non)surge_thresholds : (dict of dict) with entries:               
+                   { hosp_adm : (list of list) a list with the thresholds for 
+                                every tier. New COVID-19 admissions per 100,000 
+                                population (7-day total)
+                    staffed_bed : (list of list) a list with the thresholds for 
+                                every tier.Percent of staffed inpatient beds 
+                                occupied by COVID-19 patients (7-day average)
+                   }
+    
+        """
+        self.tiers = tiers
+        self.case_threshold = case_threshold
+        self.nonsurge_thresholds = nonsurge_thresholds
+        self.surge_thresholds = surge_thresholds 
+        self.nonsurge_thresholds_ub = nonsurge_thresholds_ub
+        self.surge_thresholds_ub = surge_thresholds_ub
+        self._n = len(self.tiers)
+        self._tier_history = None
+        self._surge_history = None
+        self._intervention_history = None
+        self._instance = instance
+        self.red_counter = 0
+         
+          
+    @classmethod
+    def policy(cls, instance, tiers): 
+        nonsurge_thresholds, surge_thresholds, nonsurge_thresholds_ub, surge_thresholds_ub = build_CDC_policy_thresholds(instance, tiers.tier)
+        case_threshold = tiers.case_threshold
+        return cls(instance, tiers.tier, 
+                   case_threshold, 
+                   nonsurge_thresholds, 
+                   surge_thresholds,
+                   nonsurge_thresholds_ub, 
+                   surge_thresholds_ub)
+        
+    def deep_copy(self):
+        p = CDCTierPolicy(self._instance, 
+                          self.tiers,
+                          self.case_threshold, 
+                          self.nonsurge_thresholds, 
+                          self.surge_thresholds,
+                          self.nonsurge_thresholds_ub, 
+                          self.surge_thresholds_ub)
+        
+        p.set_tier_history(self._tier_history_copy)
+        p.set_intervention_history(self._intervention_history_copy)
+        p.set_surge_history(self._surge_history_copy)
+        return p
+    
+    def set_tier_history(self, history):
+        # Set history and saves a copy to reset
+        self._tier_history = history.copy()
+        self._tier_history_copy = history.copy()
+    
+    def set_intervention_history(self, history):
+        # Set history and saves a copy to reset
+        self._intervention_history = history.copy()
+        self._intervention_history_copy = history.copy()
+    
+    def set_surge_history(self, history):
+        '''
+        Creaate surge history array
+        '''
+        t = len(history)
+        self._surge_history = np.zeros(t)
+        self._surge_history_copy = np.zeros(t)
+
+
+    def reset_history(self):
+        # reset history so that a new simulation can be excecuted
+        self.set_tier_history(self._tier_history_copy)
+        self.set_intervention_history(self._intervention_history_copy)
+        self.set_surge_history(self._surge_history_copy)
+        
+    def compute_cost(self):
+        return sum(self.tiers[i]['daily_cost'] for i in self._tier_history if i is not None and i in range(self._n))
+    
+    def get_tier_history(self):
+        return self._tier_history
+    
+    def get_interventions_history(self):
+        return self._intervention_history
+    
+    def get_surge_history(self):
+        return self._surge_history
+    
+    def __repr__(self):
+        p_str = "CDC_community_levels"
+        p_str = p_str.replace(' ', '')
+        p_str = p_str.replace(',', '_')
+        p_str = p_str.replace("'", "")
+        p_str = p_str.replace('[', '')
+        p_str = p_str.replace('(', '')
+        p_str = p_str.replace(']', '')
+        p_str = p_str.replace(')', '')
+        return p_str
+      
+    def __call__(self, t, ToIHT, IH, ToIY, ICU, *args, **kwargs):
+        '''
+            Function that makes an instance of a policy a callable.
+            Args:
+                t (int): time period in the simulation
+                ToIHT (ndarray): daily hospital admission, passed by the simulator
+                IH (ndarray): hospitalizations, passed by the simulator
+                ToIY (ndarray): new symptomatic cases, passed by the simulator 
+                ** kwargs: additional parameters that are passed and are used elsewhere
+        '''
+     
+        if self._tier_history[t] is not None:
+            return self._intervention_history[t],kwargs
+
+        # Compute 7-day total new cases:
+        N = self._instance.N
+        moving_avg_start = np.maximum(0, t - config['moving_avg_len'])
+        ToIY_total = ToIY.sum((1, 2))
+        ToIY_total = ToIY_total[moving_avg_start:].sum()* 100000/np.sum(N, axis=(0,1)) 
+        
+        # Compute 7-day total daily admission:
+        ToIHT_total = ToIHT.sum((1, 2))
+        ToIHT_total = ToIHT_total[moving_avg_start:].sum()* 100000/np.sum(N, axis=(0,1))
+        
+        # Compute 7-day average percent of COVID beds:
+        IHT_total = IH.sum((1, 2)) + ICU.sum((1,2))
+        IHT_avg = IHT_total[moving_avg_start:].mean()/self._instance.hosp_beds
+            
+            
+        current_tier = self._tier_history[t - 1]
+        valid_interventions_t = kwargs['feasible_interventions'][t]
+        T = self._instance.T
+        effective_tiers = range(len(self.tiers))
+
+        if ToIY_total < self.case_threshold:   # Nonsurge
+            hosp_adm_thresholds = self.nonsurge_thresholds["hosp_adm"]
+            staffed_bed_thresholds = self.nonsurge_thresholds["staffed_bed"]
+            surge_state = 0
+        else:
+            hosp_adm_thresholds = self.surge_thresholds["hosp_adm"]
+            staffed_bed_thresholds = self.surge_thresholds["staffed_bed"]
+            surge_state = 1
+        
+        hosp_adm_thresholds_ub, staffed_bed_thresholds_ub  = {}, {} 
+        for id_t in effective_tiers:
+            if id_t!= len(effective_tiers) - 1:
+                hosp_adm_thresholds_ub[id_t] = hosp_adm_thresholds[id_t + 1]
+                staffed_bed_thresholds_ub[id_t] = staffed_bed_thresholds[id_t + 1]
+            else:
+                hosp_adm_thresholds_ub[id_t] = np.inf
+                staffed_bed_thresholds_ub[id_t] = np.inf  
+                    
+        hosp_adm_tier = effective_tiers[[
+            hosp_adm_thresholds[tier_ix] <= ToIHT_total < hosp_adm_thresholds_ub[tier_ix] 
+            for tier_ix in effective_tiers].index(True)]
+            
+        staffed_bed_tier = effective_tiers[[
+            staffed_bed_thresholds[tier_ix] <= IHT_avg < staffed_bed_thresholds_ub[tier_ix] 
+            for tier_ix in effective_tiers].index(True)]
+            
+        new_tier = max(hosp_adm_tier, staffed_bed_tier)
+        if new_tier > current_tier:  # bump to the next tier
+            t_end = np.minimum(t + self.tiers[new_tier]['min_enforcing_time'], T)
+            
+        elif new_tier < current_tier: # relax one tier, if safety trigger allows
+            IH_total = IH[-1].sum()
+            assert_safety_trigger = IH_total < self._instance.hosp_beds * config['safety_threshold_frac']
+            new_tier = new_tier if assert_safety_trigger else current_tier
+            t_delta = self.tiers[new_tier]['min_enforcing_time'] if assert_safety_trigger else 1
+            t_end = np.minimum(t + t_delta, T)
+
+        else:  # stay in same tier for one more time period
+            new_tier = current_tier
+            t_end = np.minimum(t + 1, T)
+        
+        self._surge_history[t:t_end] = surge_state
+        self._intervention_history[t:t_end] = valid_interventions_t[new_tier]
+        self._tier_history[t:t_end] = new_tier
+        if new_tier == 4:
+            self.red_counter += (t_end - t)
+        else:
+            self.red_counter = 0
+ 
+        return self._intervention_history[t],kwargs        
     
 class MultiTierPolicy():
     '''
@@ -192,10 +428,10 @@ class MultiTierPolicy():
                 tier. The list must have n-1 elements if there are n tiers. Each threshold
                 is a list of values for evert time step of simulation.
             tier_type: functional form of the threshold (options are in THRESHOLD_TYPES)
-            community_tranmission: CDC's community tranmission threshold for staging.
+            community_tranmission: (deprecated) CDC's old community tranmission threshold for staging. 
+                                    Not in use anymore.
     '''
     def __init__(self, instance, tiers, lockdown_thresholds, tier_type, community_tranmission):
-       
         assert len(tiers) == len(lockdown_thresholds)
         self.tiers = tiers
         self.tier_type = tier_type
@@ -208,7 +444,6 @@ class MultiTierPolicy():
         self._tier_history = None
         self._intervention_history = None
         self._instance = instance
-        #breakpoint()
         self.red_counter = 0
     
     @classmethod
@@ -250,9 +485,9 @@ class MultiTierPolicy():
         lockdown_thresholds += [[constant_thresholds[i]] * T_slope_start + \
                                 [constant_thresholds[i] + (slope) * (t + 1) for t in range(T_slope)] 
                                 for i in range(1,len(constant_thresholds))]
-
+            
         return cls(instance, tiers, lockdown_thresholds, 'linear', community_tranmission)
-    
+
     def deep_copy(self):
         p = MultiTierPolicy(self._instance, self.tiers, self.lockdown_thresholds, self.tier_type, self.community_tranmission)
         p.set_tier_history(self._tier_history_copy)
@@ -269,6 +504,13 @@ class MultiTierPolicy():
         self._intervention_history = history.copy()
         self._intervention_history_copy = history.copy()
     
+    def set_surge_history(self, history):
+        '''
+        Redundant function.
+        '''
+        self._surge_history = None
+        self._surge_history_copy = None
+        
     def reset_history(self):
         # reset history so that a new simulation can be excecuted
         self.set_tier_history(self._tier_history_copy)
@@ -295,7 +537,7 @@ class MultiTierPolicy():
         p_str = p_str.replace(')', '')
         return p_str
     
-    def __call__(self, t, N, criStat, IH, ToIY, *args, **kwargs):
+    def __call__(self, t, ToIHT, IH, ToIY, ICU, *args, **kwargs):
         '''
             Function that makes an instance of a policy a callable.
             Args:
@@ -305,7 +547,7 @@ class MultiTierPolicy():
                 IH (ndarray): hospitalizations admissions, passed by the simulator
                 ** kwargs: additional parameters that are passed and are used elsewhere
         '''
-        
+        N = self._instance.N
         if self._tier_history[t] is not None:
             return self._intervention_history[t],kwargs
         
@@ -334,10 +576,10 @@ class MultiTierPolicy():
                 effective_threshold_ub[tier_ix] = effective_threshold[effective_tiers[tier_ind + 1]]
             else:
                 effective_threshold_ub[tier_ix] = np.inf
-             
+
         # Compute daily admissions moving average
         moving_avg_start = np.maximum(0, t - config['moving_avg_len'])
-        criStat_total = criStat.sum((1, 2))
+        criStat_total = ToIHT.sum((1, 2))
         criStat_avg = criStat_total[moving_avg_start:].mean()
         
         # Compute new cases per 100k:
@@ -395,9 +637,7 @@ class MultiTierPolicy():
             self.red_counter += (t_end - t)
         else:
             self.red_counter = 0
-        
-        
-        #breakpoint()
+
         #print('new tier: ', new_tier)
         #print('criStat_avg', criStat_avg)
         #breakpoint()

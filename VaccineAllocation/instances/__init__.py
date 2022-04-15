@@ -23,8 +23,8 @@ class Instance():
         self.transmission_file = self.path_to_data / transmission_file_name
         self.hospitalization_file = self.path_to_data / hospitalization_file_name
         self.delta_prev_file = self.path_to_data / "delta_prevelance.csv"
-        #self.variant_prev_file = self.path_to_data / "new_variant_prevelance.csv"
-        self.variant_prev_file = self.path_to_data / "omicron_prevelance.csv"
+        self.omicron_prev_file = self.path_to_data / "omicron_prevelance.csv"
+        self.variant_prev_file = self.path_to_data / "variant_prevelance.csv"
     
     def load_data(self):
         '''
@@ -101,6 +101,16 @@ class Instance():
         self.delta_start = df_delta['date'][0]
     
     
+        filename = str(self.omicron_prev_file)
+        with open(filename, 'r') as hosp_file:
+            df_omicron = pd.read_csv(
+                filename,
+                parse_dates=['date'],
+                date_parser=pd.to_datetime,
+            )
+        self.omicron_prev = list(df_omicron['prev'])    
+        self.omicron_start = df_omicron['date'][0]
+        
         filename = str(self.variant_prev_file)
         with open(filename, 'r') as hosp_file:
             df_variant = pd.read_csv(
@@ -197,9 +207,13 @@ class Tier:
         tier_filename = str(self.tier_file)
         with open(tier_filename, 'r') as tier_input:
             tier_data = json.load(tier_input)
-            assert tier_data['type'] in ['constant','step', 'linear'], "Tier type unknown."
-            self.tier_type = tier_data['type']
             self.community_transmision = tier_data['community_tranmission']
+            assert tier_data['type'] in ['constant','step', 'linear', 'CDC'], "Tier type unknown."
+            self.tier_type = tier_data['type']
+            if self.tier_type == "CDC":
+                self.case_threshold = tier_data["case_threshold"]
+            else:
+                 self.case_threshold = None     
             self.tier = tier_data['tiers']
 
 

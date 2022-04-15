@@ -30,9 +30,7 @@ def deterministic_path(instance,
                        after_tiers=[0,1,2,3,4],
                        policy_field="ToIHT",
                        policy_ub=None):
-    '''
-    TODO: Write proper docs
-    '''
+  
     fixed_TR = list(filter(None, instance.cal.fixed_transmission_reduction))
     tier_TR = [item['transmission_reduction'] for item in tiers]
     uniquePS = sorted(np.unique(np.append(fixed_TR, np.unique(tier_TR))))
@@ -89,7 +87,7 @@ def residual_error(x_beta, **kwargs):
              0.7186,
              x_beta[5],
              x_beta[6],
-             0.55]
+             x_beta[7]]
     
     cocoon = [0,
               0.787752,
@@ -107,7 +105,7 @@ def residual_error(x_beta, **kwargs):
               0.7186,
               x_beta[5],
               x_beta[6],
-              0.55]
+              x_beta[7]]
 
     tr_reduc = []
     date_list = []
@@ -142,25 +140,6 @@ def residual_error(x_beta, **kwargs):
     n_replicas_train = 1
     n_replicas_test = 1
 
-    # check if the "do-nothing" / 'Stage 1 option is in the tiers. If not, add it
-    originInt = {
-        "name": "Stage 1",
-        "transmission_reduction": 0,
-        "cocooning": 0,
-        "school_closure": 0,
-        "min_enforcing_time": 1,
-        "daily_cost": 0,
-        "color": 'white'
-        }
-
-    if tiers.tier_type == 'constant':
-        originInt["candidate_thresholds"] = [-1]  # Means that there is no lower bound
-    elif tiers.tier_type == 'step':
-        originInt["candidate_thresholds"] = [[-1], [-0.5]]
-    
-    if not (originInt in tiers.tier):
-        tiers.tier.insert(0, originInt)
-    
     given_threshold = eval('[-1,0,5,20,70]')
     given_date = None
     # if a threshold/threshold+stepping date is given, then it carries out a specific task
@@ -249,8 +228,8 @@ def least_squares_fit(initial_guess, kwargs):
     # Function that runs the least squares fit
     result = least_squares(residual_error,
                            initial_guess,
-                           bounds = ([0, 0, 0, 0, 0, 0, 0],
-                                     [1, 1, 10, 1, 1, 1, 1]),
+                           bounds = ([0, 0, 0, 0, 0, 0, 0, 0],
+                                     [1, 1, 10, 1, 1, 1, 1, 1]),
                            method='trf', verbose=2,
                            kwargs = kwargs)
     return result 
@@ -309,10 +288,10 @@ def run_fit(instance,
                         dt.date(2021, 10, 25),
                         dt.date(2022, 1, 5),
                         dt.date(2022, 3, 10),
-                        dt.date(2022, 3, 30)] 
+                        dt.date(2022, 4, 4)] 
 
   
-        x = np.array([0.7, 0.25, 3.5, 0, 0.25, 0.55, 0.75])       
+        x = np.array([0.6, 0.15, 3.5, 0.002, 0.425, 0.57, 0.68, 0.55])       
 
     selected_vaccine_policy = VAP.vaccine_policy(instance, vaccines, 'deterministic')
     
@@ -351,7 +330,7 @@ def run_fit(instance,
              0.7186,
              opt_tr_reduction[5],
              opt_tr_reduction[6],
-             0.55])
+             opt_tr_reduction[7]])
     
     cocoon = np.array([0,
               0.787752,
@@ -369,7 +348,7 @@ def run_fit(instance,
               0.7186,
               opt_tr_reduction[5],
               opt_tr_reduction[6],
-              0.55])
+              opt_tr_reduction[7]])
                                                                                 
     betas = instance.epi.beta*(1 - (contact_reduction))
     end_date = []

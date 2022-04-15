@@ -11,7 +11,7 @@ import datetime as dt
 import numpy as np
 from utils import timeit, roundup
 from vaccine_policies import VaccineAllocationPolicy
-from trigger_policies import MultiTierPolicy,MultiTierPolicy_ACS
+from trigger_policies import MultiTierPolicy,MultiTierPolicy_ACS, CDCTierPolicy
 from VaccineAllocation import config
 import copy
 
@@ -109,6 +109,7 @@ def simulate_vaccine(instance, policy, interventions, v_policy, seed=-1, **kwarg
     
     T0 = v_policy._vaccines.vaccine_start_time[0]
     IH = np.zeros((T, A, L), dtype=types)
+    ICU = np.zeros((T, A, L), dtype=types)
     ToIHT = np.zeros((T, A, L), dtype=types)   
     ToIY = np.zeros((T, A, L), dtype=types) 
        
@@ -117,7 +118,7 @@ def simulate_vaccine(instance, policy, interventions, v_policy, seed=-1, **kwarg
         kwargs["t_start"] = len(instance.real_hosp)
        
         # Get dynamic intervention and corresponding contact matrix
-        k_t, kwargs = policy(t, N, criStat=eval(kwargs["policy_field"])[:t], IH=IH[:t], ToIY=ToIY[:t], **kwargs)
+        k_t, kwargs = policy(t, ToIHT=eval(kwargs["policy_field"])[:t], IH=IH[:t], ToIY=ToIY[:t], ICU=ICU[:t], **kwargs)
         
         v_policy = simulate_t(instance, v_policy, policy, interventions, t, epi_rand, epi_orig, rnd_epi, seed, **kwargs)
         S = np.zeros((T, A, L), dtype=types)
@@ -202,10 +203,12 @@ def simulate_vaccine(instance, policy, interventions, v_policy, seed=-1, **kwarg
     moving_avg_len = config['moving_avg_len']
     ToIHT_temp = np.sum(ToIHT, axis=(1, 2))[:T]
     ToIY_temp = np.sum(ToIY, axis=(1, 2))[:T]
+    IHT_temp = np.sum(IH, axis=(1, 2))[:T] +np.sum(ICU, axis=(1, 2))[:T]
     ToIHT_moving = [ToIHT_temp[i: min(i + moving_avg_len, T)].mean() for i in range(T-moving_avg_len)]
+    ToIHT_total = [ToIHT_temp[i: min(i + moving_avg_len, T)].sum()* 100000/np.sum(N, axis=(0,1))  for i in range(T-moving_avg_len)]
     ToIY_moving = [ToIY_temp[i: min(i + moving_avg_len, T)].sum()* 100000/np.sum(N, axis=(0,1)) for i in range(T-moving_avg_len)] 
-    #ICU_ratio = np.sum(ICU, axis=(1, 2))[:T]/(np.sum(ICU, axis=(1, 2))[:T] + np.sum(IH, axis=(1, 2))[:T])
-  
+    IHT_moving = [IHT_temp[i: min(i + moving_avg_len, T)].mean()/instance.hosp_beds for i in range(T-moving_avg_len)]
+    ICU_ratio = np.sum(ICU, axis=(1, 2))[:T]/(np.sum(ICU, axis=(1, 2))[:T] + np.sum(IH, axis=(1, 2))[:T])
     output = {
         'S': S,
         'S0': S0,
@@ -218,6 +221,7 @@ def simulate_vaccine(instance, policy, interventions, v_policy, seed=-1, **kwarg
         'IA': IA,
         'IY': IY,
         'IH': IH,
+        'IHT_moving': IHT_moving,
         'R': R,
         'D': D,
         'ICU': ICU,
@@ -225,14 +229,18 @@ def simulate_vaccine(instance, policy, interventions, v_policy, seed=-1, **kwarg
         'IYIH': IYIH,
         'IYICU': IYICU,
         'IHICU': IHICU,
-        'z': policy.get_interventions_history().copy() if (isinstance(policy, MultiTierPolicy))or(isinstance(policy, MultiTierPolicy_ACS)) else None,
-        'tier_history': policy.get_tier_history().copy() if (isinstance(policy, MultiTierPolicy))or(isinstance(policy, MultiTierPolicy_ACS)) else None,
+        'z': policy.get_interventions_history().copy() if (isinstance(policy, MultiTierPolicy))or(isinstance(policy, MultiTierPolicy_ACS)) \
+            or (isinstance(policy, CDCTierPolicy))else None,
+        'tier_history': policy.get_tier_history().copy() if (isinstance(policy, MultiTierPolicy))or(isinstance(policy, MultiTierPolicy_ACS)) \
+            or (isinstance(policy, CDCTierPolicy))else None,
+        'surge_history': policy.get_surge_history().copy() if (isinstance(policy, CDCTierPolicy))else None,
         'seed': seed,
         'acs_triggered': kwargs["acs_triggered"],
         'capacity': kwargs["_capacity"],
         'ToICU': ToICU,
         'ToIHT': ToIHT,
         'ToIHT_moving': ToIHT_moving,
+        'ToIHT_total': ToIHT_total,
         'ToIY_moving': ToIY_moving,
         'ToICUD': ToICUD,
         'ToIYD': ToIYD,
@@ -244,7 +252,8 @@ def simulate_vaccine(instance, policy, interventions, v_policy, seed=-1, **kwarg
         'IH_vac': IH_vac,
         'ICU_unvac': ICU_unvac,
         'ToIHT_unvac': ToIHT_unvac,
-        'IH_unvac': IH_unvac
+        'IH_unvac': IH_unvac,
+        'ICU_ratio': ICU_ratio
         }
 
     return output
@@ -294,28 +303,28 @@ def simulate_t(instance, v_policy, policy, interventions, t_date, epi_rand, epi_
                 epi.delta_update_param(instance.delta_prev[t - T_delta])
                 
                
-            #Update epi parameters for a new variant prevalence:    
-            if epi.new_variant:
-                T_variant = np.where(np.array(v_policy._instance.cal.calendar) == instance.variant_start)[0][0]
+            #Update epi parameters for omicron:     
+            T_omicron = np.where(np.array(v_policy._instance.cal.calendar) == instance.omicron_start)[0][0]
+            if t >= T_omicron:
+                epi.omicron_update_param(instance.omicron_prev[t - T_omicron])
+                for v_groups in v_policy._vaccine_groups:
+                    v_groups.omicron_update(instance.delta_prev[t - T_delta])
+            
+            
+            # Assume an imaginary new variant in May, 2022:
+            if epi.new_variant == True:
+                T_variant= np.where(np.array(v_policy._instance.cal.calendar) == instance.variant_start)[0][0]
                 if t >= T_variant:
                     epi.variant_update_param(instance.variant_prev[t - T_variant])
-                    for v_groups in v_policy._vaccine_groups:
-                        v_groups.omicron_update(instance.delta_prev[t - T_delta])
-
-                    
             
-            #breakpoint()
-            if t >= T_variant - 12:
-                epi.change_hosp_dynamic()
-                
             if instance.otherInfo == {}:
                 if t > kwargs["rd_start"] and t <= kwargs["rd_end"]:
                     epi.update_icu_params(kwargs["rd_rate"])
             else:
                 epi.update_icu_all(t,instance.otherInfo)
+             
                 
-              
-                
+
             rate_E = discrete_approx(epi.sigma_E, step_size)
             rate_IYR = discrete_approx(np.array([[(1 - epi.pi[a, l]) * epi.gamma_IY * (1 - epi.alpha4) for l in range(L)] for a in range(A)]), step_size)
             rate_IYD = discrete_approx(np.array([[(1 - epi.pi[a, l]) * epi.gamma_IY * epi.alpha4 for l in range(L)] for a in range(A)]), step_size)
@@ -466,12 +475,10 @@ def simulate_t(instance, v_policy, policy, interventions, t_date, epi_rand, epi_
                 v_groups.ToIY[t] = v_groups._ToIY.sum(axis=0)
                 v_groups.ToIA[t] = v_groups._ToIA.sum(axis=0)
          
-            if t == T_variant:
+            if t == T_omicron:
                 # Move almost half of the people from recovered to susceptible:
                 immune_escape(epi.immune_escape_rate, t, types, v_policy, step_size)
-            # if t >=  T_variant-1:   
-            #     breakpoint()
-                
+         
             if t >= v_policy._vaccines.vaccine_start_time:
                 S_before = np.zeros((5, 2))
       
@@ -480,20 +487,15 @@ def simulate_t(instance, v_policy, policy, interventions, t_date, epi_rand, epi_
                 
                 for idx, v_groups in enumerate(v_policy._vaccine_groups):
                     
-                    # if t == 331:
-                    #     breakpoint()
-                        
                     out_sum = np.zeros((A, L))
                     S_out = np.zeros((10, 1))
                     N_out = np.zeros((10, 1))
                     for out_daily in v_groups.v_out:
                         if v_policy._instance.cal.calendar[t] == out_daily['time']:
                             S_out = np.array([age_risk_allocation[t] for age_risk_allocation in out_daily['daily_assignment']]).reshape((10,1))
-                            if epi.new_variant:
-                                T_variant = np.where(np.array(v_policy._instance.cal.calendar) == instance.variant_start)[0][0]
-                                if t >= T_variant:
-                                    if v_groups.v_name == "v_1" or v_groups.v_name == "v_2":
-                                        S_out = np.array([age_risk_allocation[t] for age_risk_allocation in epi.immune_escape_rate * out_daily['daily_assignment']]).reshape((10,1))
+                            if t >= T_omicron:
+                                if v_groups.v_name == "v_1" or v_groups.v_name == "v_2":
+                                    S_out = np.array([age_risk_allocation[t] for age_risk_allocation in epi.immune_escape_rate * out_daily['daily_assignment']]).reshape((10,1))
               
                             N_out = np.array([age_risk_allocation[t] for age_risk_allocation in v_groups.N_eligible]).reshape((10,1))
                             ratio_S_N = np.array([0 if N_out[i] == 0 else float(S_out[i]/N_out[i]) for i in range(len(N_out))]).reshape((A, L)) #(S_out/N_out).reshape((5,2))                            
@@ -510,14 +512,12 @@ def simulate_t(instance, v_policy, policy, interventions, t_date, epi_rand, epi_
                             if v_g.v_name == in_daily['from']:
                                 v_temp = v_g        
                         if v_policy._instance.cal.calendar[t] == in_daily['time']:
-                            S_in = np.array([age_risk_allocation[t] for age_risk_allocation in in_daily['daily_assignment']]).reshape((10,1))
-                            if epi.new_variant:
-                                T_variant = np.where(np.array(v_policy._instance.cal.calendar) == instance.variant_start)[0][0]
-                                if t >= T_variant:
-                                    if v_groups.v_name == "v_3" and v_temp.v_name == "v_2":
-                                        S_in = np.array([age_risk_allocation[t] for age_risk_allocation in epi.immune_escape_rate * in_daily['daily_assignment']]).reshape((10,1))
-                                    elif v_groups.v_name == "v_2" and v_temp.v_name == "v_1":
-                                        S_in = np.array([age_risk_allocation[t] for age_risk_allocation in epi.immune_escape_rate * in_daily['daily_assignment']]).reshape((10,1))
+                            S_in = np.array([age_risk_allocation[t] for age_risk_allocation in in_daily['daily_assignment']]).reshape((10,1))                        
+                            if t >= T_omicron:
+                                if v_groups.v_name == "v_3" and v_temp.v_name == "v_2":
+                                    S_in = np.array([age_risk_allocation[t] for age_risk_allocation in epi.immune_escape_rate * in_daily['daily_assignment']]).reshape((10,1))
+                                elif v_groups.v_name == "v_2" and v_temp.v_name == "v_1":
+                                    S_in = np.array([age_risk_allocation[t] for age_risk_allocation in epi.immune_escape_rate * in_daily['daily_assignment']]).reshape((10,1))
       
                             N_in = np.array([age_risk_allocation[t] for age_risk_allocation in v_temp.N_eligible]).reshape((10,1))
                             ratio_S_N = np.array([0 if N_in[i] == 0 else float(S_in[i]/N_in[i]) for i in range(len(N_in))]).reshape((A, L)) #(S_in/N_in).reshape((5,2))

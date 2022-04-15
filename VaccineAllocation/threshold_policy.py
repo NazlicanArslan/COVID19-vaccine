@@ -26,6 +26,7 @@ def run_multi_calendar(instance, tiers, interventions):
         Previous two options, lock-down or relaxation, have been expanded to a policy tier
     '''
     # Local variables
+    
     T = instance.T
     cal = instance.cal
     # Run callendar and set what's already decided
@@ -44,6 +45,7 @@ def run_multi_calendar(instance, tiers, interventions):
             sc = 0  # TODO: We might need to add the parameter again if SC is part of the optimization
         
         transmission_reduction = cal.fixed_transmission_reduction[t]
+        #breakpoint()
         cocooning_hist = cal.fixed_cocooning[t]
         if transmission_reduction is not None:
             # when there is a transmission reduction
@@ -80,7 +82,6 @@ def run_multi_calendar(instance, tiers, interventions):
                 feasIt[iTer] = int_dict([0, 0, 0])
             feasible_interventions.append(feasIt)
             SD_state[t] = None
-    
     return z_ini, SD_state, feasible_interventions
 
 def policy_multi_iterator(instance,
@@ -174,6 +175,7 @@ def policy_multi_iterator(instance,
     else:   
         fixed_policy.set_tier_history(SD_state.copy())
         fixed_policy.set_intervention_history(z_ini.copy())
+        fixed_policy.set_surge_history(SD_state.copy())  
         yield instance, fixed_policy, obj_fun, interventions, fixed_vaccine_policy, -1, kwargs
 
        
@@ -241,7 +243,8 @@ def stochastic_iterator(instance,
     
     fixed_policy.set_tier_history(SD_state.copy())
     fixed_policy.set_intervention_history(z_ini.copy())
-        
+    fixed_policy.set_surge_history(SD_state.copy())  
+    
     reps = n_replicas
     seeds = []
     seeds.extend(crn_seeds if crn_seeds is not None else range(n_replicas))
@@ -250,6 +253,7 @@ def stochastic_iterator(instance,
         fixed_vaccine_policy.reset_history()
         fixed_policy.set_tier_history(SD_state.copy())
         fixed_policy.set_intervention_history(z_ini.copy())
+        fixed_policy.set_surge_history(SD_state.copy())  
         r_seed = seeds[rep_i] + (seed_shift if seeds[rep_i] >= 0 else 0)
         yield instance, fixed_policy, obj_fun, interventions, fixed_vaccine_policy, r_seed, kwargs
         
@@ -295,5 +299,6 @@ def stoch_simulation_iterator(instance,
         policy_copy = policy.deep_copy()
         policy_copy.set_tier_history(SD_state.copy())
         policy_copy.set_intervention_history(z_ini.copy())
+        policy_copy.set_surge_history(SD_state.copy())  
         yield instance, policy_copy, obj_func, interventions, vaccine_policy, r_seed, kwargs
         

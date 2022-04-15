@@ -113,6 +113,8 @@ class EpiSetup:
         self.YFR = self.IFR / self.tau
         self.HFR = self.YFR / self.YHR
         self.rIH0 = self.rIH
+        self.YHR0 = self.YHR
+        self.YHR_overall0 = self.YHR_overall
         # if gamma_IH and mu are lists, reshape them for right dimension
         if isinstance(self.gamma_IH,np.ndarray):
             self.gamma_IH = self.gamma_IH.reshape(self.gamma_IH.size,1)
@@ -184,20 +186,63 @@ class EpiSetup:
         self.mu_ICU = (self.mu_ICU0*(1 + self.alpha3)) * (1 - prev) + (self.mu_ICU0 * 0.65 * (1 + self.alpha3_delta)) * prev
         self.gamma_IH = (self.gamma_IH0*(1 - self.alpha2)) * (1 - prev) + (self.gamma_IH0 * (1 - self.alpha2_delta)) * prev
        
+        self.alpha4 = self.alpha4_delta * prev + self.alpha4 * (1 - prev)
+        
+    def omicron_update_param(self, prev):
+        '''
+            Update parameters according omicron. 
+            Assume increase in the tranmission.
+            The changes in hosp dynamic in Austin right before omicron emerged.
+        '''       
+        self.beta = self.beta * (1 - prev) + self.beta * (self.omicron_beta) * prev #increased transmission
+    
+        self.YHR = self.YHR0 * (1 - prev) + self.YHR0 * 0.9 * prev
+        self.YHR_overall =  self.YHR_overall * (1 - prev) + self.YHR_overall * 0.9 * prev
+        
+        #Update parameters where YHR is used:
+        self.omega_P = np.array([(self.tau * self.omega_IY * (self.YHR_overall[a] / self.Eta[a] +
+                                                              (1 - self.YHR_overall[a]) / self.gamma_IY) +
+                                  (1 - self.tau) * self.omega_IA / self.gamma_IA) /
+                                  (self.tau * self.omega_IY +
+                                  (1 - self.tau) * self.omega_IA) * self.rho_Y * self.pp / (1 - self.pp)
+                                  for a in range(len(self.YHR_overall))])
+        self.omega_PA = self.omega_IA * self.omega_P
+        self.omega_PY = self.omega_IY * self.omega_P
+              
+        
+        self.pi = np.array([
+            self.YHR[a] * self.gamma_IY / (self.Eta[a] + (self.gamma_IY - self.Eta[a]) * self.YHR[a])
+            for a in range(len(self.YHR))
+        ])
+        self.HFR = self.YFR / self.YHR
+        
+        try:
+            self.HICUR0 = self.HICUR
+            self.nu = self.gamma_IH * self.HICUR / (self.mu + (self.gamma_IH- self.mu) * self.HICUR)
+            if isinstance(self.gamma_ICU,np.ndarray):
+                self.gamma_ICU = self.gamma_ICU.reshape(self.gamma_ICU.size,1)
+                self.gamma_ICU0 = self.gamma_ICU.copy()
+            if isinstance(self.mu_ICU,np.ndarray):
+                self.mu_ICU = self.mu_ICU.reshape(self.mu_ICU.size,1)
+                self.mu_ICU0 = self.mu_ICU.copy()
+            self.nu_ICU = self.gamma_ICU * self.ICUFR / (self.mu_ICU + (self.gamma_ICU- self.mu_ICU) * self.ICUFR)
+        except:
+            self.nu = self.gamma_IH * self.HFR / (self.mu + (self.gamma_IH- self.mu) * self.HFR)
+
+
+         # Update hospital dynamic parameters:
+        self.gamma_ICU = self.gamma_ICU0 *(1 + self.alpha1_omic) * 1.1 * prev + (self.gamma_ICU0 * 0.65 *(1 + self.alpha1_delta)) * (1 - prev)
+        self.mu_ICU = self.mu_ICU0 * (1 + self.alpha3_omic) * prev + (self.mu_ICU0 * 0.65 * (1 + self.alpha3_delta)) * (1 - prev)
+        self.gamma_IH = self.gamma_IH0 * (1 - self.alpha2_omic) * prev + (self.gamma_IH0 * (1 - self.alpha2_delta)) * (1 - prev)
+        
+        self.alpha4 = self.alpha4_omic * prev + self.alpha4_delta * (1 - prev)
+        
     def variant_update_param(self, prev):
         '''
-            Update parameters according for a new variant of concern. 
-            Assume increase in the tranmission.
-        '''
-        #breakpoint()
-        #self.beta = self.beta0 * (1 - prev) + self.beta0 * (1.65) * prev #increased transmission         
+            Assume an imaginary new variant that is more transmissible.
+        '''       
         self.beta = self.beta * (1 - prev) + self.beta * (self.new_variant_beta) * prev #increased transmission
-    
-    def change_hosp_dynamic(self):
-         # Update hospital dynamic parameters:
-        self.gamma_ICU = self.gamma_ICU0 *(1 + self.alpha1_omic)
-        self.mu_ICU = self.mu_ICU0 * (1 + self.alpha3_omic)
-        self.gamma_IH = self.gamma_IH0 * (1 - self.alpha2_omic)
+     
        
     @property
     def eq_mu(self):

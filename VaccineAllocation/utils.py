@@ -75,12 +75,12 @@ def parse_arguments():
                         help='File name where vaccine data is.')   
     parser.add_argument("-v_allocation", 
                         metavar='FILENAME',
-                        default=None,
+                        default='vaccine_allocation_fixed.csv',
                         type=str,
                         help='File name where vaccine supply and allocation data is.')
     parser.add_argument("-v_boost", 
                         metavar = 'FILENAME',
-                        default = None,
+                        default = 'booster_allocation_fixed.csv',
                         type = str,
                         help = 'File name where booster dose supply and allocation data is.')
     # parser.add_argument("-v_time_increment",

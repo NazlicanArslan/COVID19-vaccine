@@ -24,14 +24,16 @@ import csv
 
 plt.rcParams['hatch.linewidth'] = 3.0
 
-colors = {'S': 'b', 'S0': 'b', 'S1': 'b', 'S2': 'b',  'S3': 'b', 'E': 'y', 'IA': 'c', 'IY': 'm', 'IH': 'k', 'R': 'g', 'D': 'k', 'ToIHT': 'teal', 'ToIHT_moving': 'teal', 'ToIA': 'teal', 'ToIY_moving': 'teal','ToIHT_unvac': 'teal', 'ToIHT_vac': 'teal', 'ICU': 'k', 'ICU_ratio': 'k','ToICU': 'teal', 'IHT': 'k', 'ITot': 'k'}
-light_colors = {'IH':'silver','ToIHT':'paleturquoise', 'ToIHT_moving':'paleturquoise', 'D': 'teal', 'ToIHT_unvac':'paleturquoise', 'ToIHT_unvac':'paleturquoise','ToIA':'paleturquoise', 'ToIY_moving': 'paleturquoise', 'ICU':'silver', 'ICU_ratio':'silver','ToICU': 'paleturquoise', 'IHT': 'silver', 'ITot': 'silver', 'S': 'blue', 'S0': 'blue', 'S1': 'blue', 'S2': 'blue', 'S3': 'purple'}
+colors = {'S': 'b', 'S0': 'b', 'S1': 'b', 'S2': 'b',  'S3': 'b', 'E': 'y', 'IA': 'c', 'IY': 'm', 'IH': 'k','IHT_moving': 'k', 'R': 'g', 'D': 'k', 'ToIHT': 'teal', 'ToIHT_moving': 'teal', 'ToIHT_total': 'teal','ToIA': 'teal', 'ToIY_moving': 'teal','ToIHT_unvac': 'teal', 'ToIHT_vac': 'teal', 'ICU': 'k', 'ICU_ratio': 'k','ToICU': 'teal', 'IHT': 'k', 'ITot': 'k'}
+light_colors = {'IH':'silver', 'IHT_moving':'silver', 'ToIHT':'paleturquoise',  'ToIHT_moving':'paleturquoise', 'ToIHT_total':'paleturquoise', 'D': 'teal', 'ToIHT_unvac':'paleturquoise', 'ToIHT_unvac':'paleturquoise','ToIA':'paleturquoise', 'ToIY_moving': 'paleturquoise', 'ICU':'silver', 'ICU_ratio':'silver','ToICU': 'paleturquoise', 'IHT': 'silver', 'ITot': 'silver', 'S': 'blue', 'S0': 'blue', 'S1': 'blue', 'S2': 'blue', 'S3': 'purple'}
 l_styles = {'sim': '-', 'opt': '--'}
 compartment_names = {
     'ITot': 'Total Infectious',
     'IY': 'Symptomatic',
     'IH': 'General Beds',
+    'IHT_moving': 'Percent of staffed inpatient beds (7-day average)',
     'ToIHT_moving': 'COVID-19 Hospital Admissions\n(Seven-day Average)',
+    'ToIHT_total': 'COVID-19 Hospital Admissions\n(Seven-day  Total)',
     'D': 'Deaths',
     'R': 'Recovered',
     'S': 'Susceptible',
@@ -144,9 +146,47 @@ def change_avg(all_st, min_st ,max_st, mean_st, nday_avg):
                 max_st_copy[v][t] = np.mean(max_st[v][np.maximum(t-nday_avg,0):t+1])
             for t in range(len(mean_st_copy[v])):
                 mean_st_copy[v][t] = np.mean(mean_st[v][np.maximum(t-nday_avg,0):t+1])
-            
+          
     return all_st_copy,min_st_copy,max_st_copy,mean_st_copy
 
+def convert_CDC_threshold(policy, N):
+    '''
+    CDC hospital admission thresholds are for 7-day total, 
+    convert to 7-day average for plotting.        
+    '''
+    nonsurge_hosp_adm_avg = policy.nonsurge_thresholds['hosp_adm'].copy()
+    surge_hosp_adm_avg = policy.surge_thresholds['hosp_adm'].copy()
+    
+    nonsurge_staffed_bed_avg = policy.nonsurge_thresholds['staffed_bed'].copy()
+    surge_staffed_bed_avg = policy.surge_thresholds['staffed_bed'].copy()
+    
+    nonsurge_hosp_adm_avg_ub = policy.nonsurge_thresholds_ub['hosp_adm'].copy()
+    surge_hosp_adm_avg_ub = policy.surge_thresholds_ub['hosp_adm'].copy()
+    
+    nonsurge_staffed_bed_avg_ub = policy.nonsurge_thresholds_ub['staffed_bed'].copy()
+    surge_staffed_bed_avg_ub = policy.surge_thresholds_ub['staffed_bed'].copy()
+    for tier in range(len(policy.tiers)):
+        nonsurge_hosp_adm_avg[tier] = max(nonsurge_hosp_adm_avg[tier]*N/700000, -1)
+        surge_hosp_adm_avg[tier] = max(surge_hosp_adm_avg[tier]*N/700000, -1)
+        nonsurge_staffed_bed_avg[tier] =  max(nonsurge_staffed_bed_avg[tier]*N/700000, -1)
+        surge_staffed_bed_avg[tier] =  max(surge_staffed_bed_avg[tier]*N/700000, -1)
+        
+        if tier != len(policy.tiers)-1:
+            nonsurge_hosp_adm_avg_ub[tier] = max(nonsurge_hosp_adm_avg_ub[tier]*N/700000, -1)
+            surge_hosp_adm_avg_ub[tier] = max(surge_hosp_adm_avg_ub[tier]*N/700000, -1)
+            nonsurge_staffed_bed_avg_ub[tier] =  max(nonsurge_staffed_bed_avg_ub[tier]*N/700000, -1)
+            surge_staffed_bed_avg_ub[tier] =  max(surge_staffed_bed_avg_ub[tier]*N/700000, -1)
+    
+    nonsurge_thresholds_avg = {"hosp_adm":nonsurge_hosp_adm_avg, "staffed_bed":nonsurge_staffed_bed_avg}
+    surge_thresholds_avg = {"hosp_adm":surge_hosp_adm_avg, "staffed_bed":surge_staffed_bed_avg}
+    
+    nonsurge_thresholds_avg_ub = {"hosp_adm":nonsurge_hosp_adm_avg_ub, "staffed_bed":nonsurge_staffed_bed_avg_ub}
+    surge_thresholds_avg_ub = {"hosp_adm":surge_hosp_adm_avg_ub, "staffed_bed":surge_staffed_bed_avg_ub}
+    lockdown_threshold_avg = {0: nonsurge_thresholds_avg, 1: surge_thresholds_avg} 
+    lockdown_threshold_avg_ub = {0: nonsurge_thresholds_avg_ub, 1: surge_thresholds_avg_ub} 
+
+    return lockdown_threshold_avg, lockdown_threshold_avg_ub 
+    
 def plot_multi_tier_sims(instance_name,
                          instance,
                          policy,
@@ -238,7 +278,7 @@ def plot_multi_tier_sims(instance_name,
     last_day_hosp_data = len(real_hosp) - 1
     lb_hosp = real_hosp[-1] * (1 - config['div_filter_frac'])
     ub_hosp = real_hosp[-1] * (1 + config['div_filter_frac'])
-    if 'ToIHT_moving' in states_to_plot or 'ToIY_moving' in states_to_plot or  'ICU_ratio' in states_to_plot:
+    if 'ToIHT_moving' in states_to_plot or 'ToIY_moving' in states_to_plot or 'IHT_moving' in states_to_plot  or 'ToIHT_total' in states_to_plot  or 'ICU_ratio' in states_to_plot:
         states_ts = {v: np.vstack(list(p[v][:T] for p in profiles)) for v in states_to_plot}
     else:
         states_ts = {v: np.vstack(list(np.sum(p[v], axis=(1, 2))[:T] for p in profiles)) for v in states_to_plot}
@@ -251,7 +291,7 @@ def plot_multi_tier_sims(instance_name,
     states_ts_temp = {v: np.vstack(list(np.sum(p[v], axis=(1, 2))[:T] for p in profiles)) for v in states_to_plot_temp}
     states_ts_temp['ToIHT_moving'] = np.vstack(list(p['ToIHT_moving'][:T] for p in profiles))
     states_ts_temp['ToIY_moving'] = np.vstack(list(p['ToIY_moving'][:T] for p in profiles))
-    states_to_plot_temp = ['IHT', 'ToIHT', 'ICU', 'D', 'ToIA', 'ToIY','ToIHT_moving', 'ToIY', 'S0', 'S1', 'S2', 'S3']
+    states_to_plot_temp = ['IH_moving','IHT', 'ToIHT', 'ICU', 'D', 'ToIA', 'ToIY','ToIHT_moving','ToIHT_total', 'ToIY', 'S0', 'S1', 'S2', 'S3']
     
     for cap in [200, 175, 150]:
         ICU_cap_exceed = sum(1 for p in profiles if any(val> cap for val in np.sum(p['ICU'], axis=(1, 2))[t_start:T])) 
@@ -354,13 +394,47 @@ def plot_multi_tier_sims(instance_name,
     print(100 * avg_deaths_by_group.reshape(5, 2) / avg_deaths_by_group.sum())
     R_mean = np.mean(all_states_ts['R'][:, -1] / population)
     print(f'R End Horizon {R_mean}')
+    
+    
+    # Plotting the policy
+    # Plot school closure and cocooning
+    tiers = policy.tiers
+    z_ts = profiles[central_path]['z'][:T]
+    tier_h = profiles[central_path]['tier_history'][:T]
+    surge_hist = profiles[central_path]['surge_history'][:T]
+    surge_states = [0, 1]
+    surge_colors = {0: 'moccasin', 1: 'pink'}
+    intervals_surge = {u: [False for t in range(len(z_ts) + 1)] for u in surge_states}
+    print('seed was', profiles[central_path]['seed'])
+    sc_co = [interventions[k].school_closure for k in z_ts]
+    unique_policies = set(sc_co)
+    sd_lvl = [interventions[k].social_distance for k in z_ts]
+    sd_levels = [tier['transmission_reduction'] for tier in tiers] + [0, 0.95] + sd_lvl
+    unique_sd_policies = list(set(sd_levels))
+    unique_sd_policies.sort()
+    intervals = {u: [False for t in range(len(z_ts) + 1)] for u in unique_policies}
+    intervals_sd = {u: [False for t in range(len(z_ts) + 1)] for u in unique_sd_policies}
+    
+    for t in range(len(z_ts)):
+        sc_co_t = interventions[z_ts[t]].school_closure
+        for u in unique_policies:
+            if u == sc_co_t:
+                intervals[u][t] = True
+                intervals[u][t + 1] = True
+        for u_sd in unique_sd_policies:
+            if u_sd == interventions[z_ts[t]].social_distance:
+                intervals_sd[u_sd][t] = True
+                intervals_sd[u_sd][t + 1] = True
+        for u in surge_states:
+            if surge_hist[t] == u:
+                 intervals_surge[u][t] = True
+                 intervals_surge[u][t + 1] = True
     # Policy
-    lockdown_threshold = policy.lockdown_thresholds[0]
-    # fdmi = policy_params['first_day_month_index']
-    # policy = {(m, y): lockdown_threshold[fdmi[m, y]] for (m, y) in fdmi if fdmi[m, y] < T}
-    # print('Lockdown Threshold:')
-    # print(policy)
-   
+    #lockdown_threshold = policy.lockdown_thresholds[0]
+    lockdown_threshold  = {0: policy.nonsurge_thresholds, 1: policy.surge_thresholds}
+    lockdown_threshold_ub = {0: policy.nonsurge_thresholds_ub, 1: policy.surge_thresholds_ub}
+    lockdown_threshold_avg, lockdown_threshold_avg_ub = convert_CDC_threshold(policy, instance.N.sum(axis=(0,1)))
+
     hide = 1
     l_style = l_styles['sim']
     for v in plot_left_axis:
@@ -380,27 +454,12 @@ def plot_multi_tier_sims(instance_name,
         if v == 'S3':                
             v_a = ax1.plot(all_st['S3'].T , c=colors[v], linestyle=l_style, linewidth=2, label=label_v, alpha=1 * hide, zorder = 50)
             #plotted_lines.append(v_a[0])
-        elif v != 'IYIHa':                
-            v_a = ax1.plot(mean_st[v].T * bed_scale, c=colors[v], linestyle=l_style, linewidth=2, label=label_v, alpha=1 * hide, zorder = 50)
-            plotted_lines.append(v_a[0])
-            v_aa = ax1.plot(all_st[v].T * bed_scale, c=light_colors[v], linestyle=l_style, linewidth=1, label=label_v, alpha=0.8 * hide)
-            plotted_lines.append(v_aa[0])
-            
-            
-        # if central_path != 0:
-        #     ax1.fill_between(range(len(max_st[v])),
-        #                     max_st[v],
-        #                     min_st[v],
-        #                     color=colors[v],
-        #                     linestyle=l_style,
-        #                     facecolor="none",
-        #                     linewidth=0.0,
-        #                     alpha=0.5 * hide)
+     
        
             
         if v == 'ICU':
             ax1.hlines(150, 0, T, color='k', linestyle='-', linewidth=3 )
-        if v == 'IH' or v == 'ICU' or v == 'IHT' or v == 'ITot' or v == 'ICU_ratio' or v == "D":
+        if v == 'IH' or v == 'ICU' or v == 'IHT' or v == 'ITot' or v == 'ICU_ratio' or v == 'ToIHT_total' or v == 'IHT_moving':
             real_h_plot = ax1.scatter(range(len(real_hosp_or_icu)), real_hosp_or_icu, color='maroon', label='Actual hospitalizations',zorder=100,s=15)
             max_y_lim_1 = np.maximum(roundup(np.max(hosp_beds_list), 100), max_y_lim_1)
             try:
@@ -431,12 +490,15 @@ def plot_multi_tier_sims(instance_name,
                              color=colors[v],
                              annotation_clip=True,
                              fontsize=text_size + 2)  #
-            if plot_triggers:
+                       
                 ax1.hlines(policy_params['hosp_beds'] * 0.6, 0, T, 'b', '-', linewidth=3)
-                for tier_ix, tier in enumerate(policy.tiers):
-                    ax1.plot([policy.lockdown_thresholds[tier_ix][0]]*T, color=tier['color'], linewidth=5)
-                    xpos = np.minimum(405, int(T * 0.65))  #180  #405
-                    xytext = (xpos, lockdown_threshold[xpos] - 20)
+                
+                    # ax1.plot([policy.lockdown_thresholds[tier_ix][0]]*T, linewidth=5)
+                    # xpos = np.minimum(405, int(T * 0.65))  #180  #405
+                    # xytext = (xpos, lockdown_threshold[xpos] - 20)
+
+
+
 
                 if plot_trigger_annotations:
                     ax1.annotate('Safety threshold', (xpos, policy_params['hosp_level_release'] - 250),
@@ -472,26 +534,26 @@ def plot_multi_tier_sims(instance_name,
 
                     real_h_plot = ax1.scatter(range(T_adm), real_hosp_moving_avg, color='maroon', label='New hospital admission',zorder=100,s=15)
             
-            if plot_triggers and vertical_fill:
-                #if central_path > 0:
-                #    IYIH_mov_ave = []
-                #    for t in range(T):
-                #        IYIH_mov_ave.append(np.mean(mean_st[v][np.maximum(0, t - 7):t]))
-                #    v_avg = ax1.plot(IYIH_mov_ave, c='black', linestyle=l_style, label=f'Moving Avg. {label_v}')
-                # plotted_lines.append(v_avg[0])
-                for tier_ix, tier in enumerate(policy.tiers):
-                    ax1.plot([policy.lockdown_thresholds[tier_ix][0]]*T, color=tier['color'], linewidth=5)
-                    xpos = np.minimum(405, int(T * 0.65))  #180  #405
-                    xytext = (xpos, lockdown_threshold[xpos] - 20)
-                    if plot_trigger_annotations:
-                        ax1.annotate('Lock-down threshold',
-                                     xy=(120, lockdown_threshold[120]),
-                                     xytext=xytext,
-                                     xycoords='data',
-                                     textcoords='data',
-                                     color='b',
-                                     annotation_clip=True,
-                                     fontsize=text_size + 2)
+            # if plot_triggers and vertical_fill:
+            #     #if central_path > 0:
+            #     #    IYIH_mov_ave = []
+            #     #    for t in range(T):
+            #     #        IYIH_mov_ave.append(np.mean(mean_st[v][np.maximum(0, t - 7):t]))
+            #     #    v_avg = ax1.plot(IYIH_mov_ave, c='black', linestyle=l_style, label=f'Moving Avg. {label_v}')
+            #     # plotted_lines.append(v_avg[0])
+            #     for tier_ix, tier in enumerate(policy.tiers):
+            #         ax1.plot([policy.lockdown_thresholds[tier_ix][0]]*T, color=tier['color'], linewidth=5)
+            #         xpos = np.minimum(405, int(T * 0.65))  #180  #405
+            #         xytext = (xpos, lockdown_threshold[xpos] - 20)
+            #         if plot_trigger_annotations:
+            #             ax1.annotate('Lock-down threshold',
+            #                          xy=(120, lockdown_threshold[120]),
+            #                          xytext=xytext,
+            #                          xycoords='data',
+            #                          textcoords='data',
+            #                          color='b',
+            #                          annotation_clip=True,
+            #                          fontsize=text_size + 2)
             if "plot_ACS_triggers" in kwargs.keys():
                 if kwargs["plot_ACS_triggers"]:
                     ax1.plot([policy.acs_thrs]*T, color='k', linewidth=5)
@@ -512,17 +574,17 @@ def plot_multi_tier_sims(instance_name,
                              xycoords='axes fraction',
                              color='b',
                              annotation_clip=True)
-        if v == 'ToIHT':
-            if plot_triggers:
-                ax2.plot(lockdown_threshold[:T], 'b-')
-                xytext = (160, lockdown_threshold[160] - 15)
-                ax2.annotate('Trigger - Avg. Daily Hospitalization',
-                             xy=(120, lockdown_threshold[120]),
-                             xytext=xytext,
-                             xycoords='data',
-                             textcoords='data',
-                             color='b',
-                             annotation_clip=True)
+        # if v == 'ToIHT':
+        #     if plot_triggers:
+        #         ax2.plot(lockdown_threshold[:T], 'b-')
+        #         xytext = (160, lockdown_threshold[160] - 15)
+        #         ax2.annotate('Trigger - Avg. Daily Hospitalization',
+        #                      xy=(120, lockdown_threshold[120]),
+        #                      xytext=xytext,
+        #                      xycoords='data',
+        #                      textcoords='data',
+        #                      color='b',
+        #                      annotation_clip=True)
         if v == "S3":
             max_y_lim_2 = np.maximum(max_y_lim_2, 1)
             label_v = compartment_names[v]
@@ -552,32 +614,12 @@ def plot_multi_tier_sims(instance_name,
                 #              color='b',
                 #              annotation_clip=True)
     
-    # Plotting the policy
-    # Plot school closure and cocooning
-    tiers = policy.tiers
-    z_ts = profiles[central_path]['z'][:T]
-    tier_h = profiles[central_path]['tier_history'][:T]
-   # breakpoint()
-    print('seed was', profiles[central_path]['seed'])
-    sc_co = [interventions[k].school_closure for k in z_ts]
-    unique_policies = set(sc_co)
-    sd_lvl = [interventions[k].social_distance for k in z_ts]
-    sd_levels = [tier['transmission_reduction'] for tier in tiers] + [0, 0.95] + sd_lvl
-    unique_sd_policies = list(set(sd_levels))
-    unique_sd_policies.sort()
-    intervals = {u: [False for t in range(len(z_ts) + 1)] for u in unique_policies}
-    intervals_sd = {u: [False for t in range(len(z_ts) + 1)] for u in unique_sd_policies}
-    for t in range(len(z_ts)):
-        sc_co_t = interventions[z_ts[t]].school_closure
-        for u in unique_policies:
-            if u == sc_co_t:
-                intervals[u][t] = True
-                intervals[u][t + 1] = True
-        for u_sd in unique_sd_policies:
-            if u_sd == interventions[z_ts[t]].social_distance:
-                intervals_sd[u_sd][t] = True
-                intervals_sd[u_sd][t + 1] = True
     
+    
+   # breakpoint()
+   
+                
+            
     interval_color = {0: 'orange', 1: 'purple', 0.5: 'green'}
     interval_labels = {0: 'Schools Open', 1: 'Schools Closed', 0.5: 'Schools P. Open'}
     interval_alpha = {0: 0.3, 1: 0.3, 0.5: 0.3}
@@ -638,28 +680,70 @@ def plot_multi_tier_sims(instance_name,
         max_y_lim_1 = roundup(max_y_lim_1, 100 if 'ToIHT' in plot_left_axis else 1000)
         
     if vertical_fill:
-        for u in unique_sd_policies:
-            try:
-                if u in tier_by_tr.keys():
-                    u_color = tier_by_tr[u]['color']
-                    u_label = f'{tier_by_tr[u]["name"]}' if u > 0 else ""
-                else:
-                    u_color,u_label = colorDecide(u,tier_by_tr)
+        if v == 'ToIY_moving':
+            #breakpoint()
+            for u in surge_states:
+                fill_1 = intervals_surge[u].copy()
+                fill_2 = intervals_surge[u].copy()
                 u_alpha1 = 0.6
                 u_alpha2 = 0.6
-                fill_1 = intervals_sd[u].copy()
-                fill_2 = intervals_sd[u].copy()
-                for i in range(len(intervals_sd[u])):
+                u_color = surge_colors[u] 
+                for i in range(len(intervals_surge[u])):
                     if 'history_white' in kwargs.keys() and kwargs['history_white']:
                         if i <= t_start:
                             fill_2[i] = False
-                        fill_1[i] = False
+                            fill_1[i] = False
+                        # else:
+                        #     if i <= t_start:
+                        #         fill_2[i] = False
+                        #     else:
+                        #         fill_1[i] = False
+                    policy_ax.fill_between(range(len(z_ts) + 1),
+                                      0,
+                                      1,
+                                      where=fill_1,
+                                      color=u_color,
+                                      linewidth=0.0,
+                                      step='pre')
+                        # policy_ax.fill_between(range(len(z_ts) + 1),
+                        #                0,
+                        #                1,
+                        #                where=fill_2,
+                        #                color=u_color,
+                        #                alpha=u_alpha2,
+                        #                label=u_label,
+                        #                linewidth=0.0,
+                        #                step='pre')
+                policy_ax.fill_between(range(t_start),
+                                      0,
+                                      1,
+                                      color='white',
+                                      linewidth=0.0,
+                                      step='pre')
+        else:
+            for u in unique_sd_policies:
+                try:
+                    if u in tier_by_tr.keys():
+                        u_color = tier_by_tr[u]['color']
+                        u_label = f'{tier_by_tr[u]["name"]}' if u > 0 else ""
                     else:
-                        if i <= t_start:
-                            fill_2[i] = False
+                        u_color,u_label = colorDecide(u,tier_by_tr)
+                    u_alpha1 = 0.6
+                    u_alpha2 = 0.6
+                    fill_1 = intervals_sd[u].copy()
+                    fill_2 = intervals_sd[u].copy()
+                    for i in range(len(intervals_sd[u])):
+                        if 'history_white' in kwargs.keys() and kwargs['history_white']:
+                            if i <= t_start:
+                                fill_2[i] = False
+                            fill_1[i] = False
                         else:
-                            fill_1[i] = False       
-                policy_ax.fill_between(range(len(z_ts) + 1),
+                            if i <= t_start:
+                                fill_2[i] = False
+                            else:
+                                fill_1[i] = False
+                        
+                        policy_ax.fill_between(range(len(z_ts) + 1),
                                        0,
                                        1,
                                        where=fill_1,
@@ -668,7 +752,7 @@ def plot_multi_tier_sims(instance_name,
                                        label=u_label,
                                        linewidth=0.0,
                                        step='pre')
-                policy_ax.fill_between(range(len(z_ts) + 1),
+                        policy_ax.fill_between(range(len(z_ts) + 1),
                                        0,
                                        1,
                                        where=fill_2,
@@ -677,15 +761,15 @@ def plot_multi_tier_sims(instance_name,
                                        label=u_label,
                                        linewidth=0.0,
                                        step='pre')
-            except Exception:
-                print(f'WARNING: TR value {u} was not plotted')
+                except Exception:
+                    print(f'WARNING: TR value {u} was not plotted')
     else:
         # fill the horizontal policy color
-       # breakpoint()
+       
         if 'ToIY_moving' in plot_left_axis:
             
-            case_policy_lockdown_thresholds = [-1, -1, 10, 50, 100]
-            case_policy_lockdown_thresholds_ub = [-1, 10, 50, 100, np.inf]
+            case_policy_lockdown_thresholds =  policy.case_threshold
+            
             for ti in range(len(tiers)):
                 
                 u = tiers[ti]['transmission_reduction']
@@ -713,64 +797,42 @@ def plot_multi_tier_sims(instance_name,
                                        linewidth=0.0,
                                        step='pre')
                     
-                elif policy.tier_type == 'linear':                   
-                    ub = [th/max_y_lim_1 if th < np.inf else max_y_lim_1 for th in policy.lockdown_thresholds_ub[ti]]
-                    lb = [th/max_y_lim_1 for th in policy.lockdown_thresholds[ti]]
-                    #breakpoint()   
-                    print('The slope', policy.lockdown_thresholds_ub[ti][450] - policy.lockdown_thresholds_ub[ti][449])
-                    print('thr', policy.lockdown_thresholds_ub[ti][-1])
-                    policy_ax.fill_between(range(len(z_ts) + 1),
-                                           lb,
-                                           ub,
-                                           color=u_color,
-                                           alpha=u_alpha,
-                                           label=u_label,
-                                           linewidth=0.0,
-                                           step='pre')
                     
         else:
-            for ti in range(len(tiers)):
-                u = tiers[ti]['transmission_reduction']
-                if u in tier_by_tr.keys():
-                    u_color = tier_by_tr[u]['color']
-                    u_label = f'{tier_by_tr[u]["name"]}' if u > 0 else ""
-                else:
-                    u_color,u_label = colorDecide(u,tier_by_tr)
+            for u in surge_states:
+                fill = intervals_surge[u].copy()
                 u_alpha = 0.6
-                if 'constant' == 'constant': # policy.tier_type 
-                    u_lb = policy.lockdown_thresholds[ti][0]
-                    u_ub = policy.lockdown_thresholds_ub[ti][0]
-                    #breakpoint()
-                    if u_ub == np.inf:
-                        u_ub = max_y_lim_1
-                    if u_lb >= -1 and u_ub >= 0:
-                        policy_ax.fill_between(range(len(z_ts) + 1),
-                                       u_lb/max_y_lim_1,
-                                       u_ub/max_y_lim_1,
-                                       color=u_color,
-                                       alpha=u_alpha,
-                                       label=u_label,
-                                       linewidth=0.0,
-                                       step='pre')
-              
-                elif policy.tier_type == 'linear':                   
-                    ub = [th/max_y_lim_1 if th < np.inf else max_y_lim_1 for th in policy.lockdown_thresholds_ub[ti]]
-                    lb = [th/max_y_lim_1 for th in policy.lockdown_thresholds[ti]]
-                    #breakpoint()   
-                    print('The slope', policy.lockdown_thresholds_ub[ti][450] - policy.lockdown_thresholds_ub[ti][449])
-                    print('thr', policy.lockdown_thresholds_ub[ti][-1])
-                    policy_ax.fill_between(range(len(z_ts) + 1),
-                                           lb,
-                                           ub,
-                                           color=u_color,
-                                           alpha=u_alpha,
-                                           label=u_label,
-                                           linewidth=0.0,
-                                           step='pre')
+                for i in range(len(intervals_surge[u])):
+                    for tier_ix, tier in enumerate(policy.tiers):
+                        u_color = tier['color']
+                        if v == 'ToIHT_total':
+                            u_lb = lockdown_threshold[u]["hosp_adm"][tier_ix]
+                            u_ub = lockdown_threshold_ub[u]["hosp_adm"][tier_ix]
+                        elif v == 'IHT_moving':
+                            u_lb = lockdown_threshold[u]["staffed_bed"][tier_ix]
+                            u_ub = lockdown_threshold_ub[u]["staffed_bed"][tier_ix]
+                        elif v == 'ToIHT_moving':
+                            u_lb = lockdown_threshold_avg[u]["hosp_adm"][tier_ix]
+                            u_ub = lockdown_threshold_avg_ub[u]["hosp_adm"][tier_ix]
+                        if u_ub == np.inf:
+                            u_ub = max_y_lim_1
+                        if u_lb >= -1 and u_ub >= 0:
+                            #breakpoint()
+                            policy_ax.fill_between(range(len(z_ts) + 1),
+                                                   u_lb/max_y_lim_1,
+                                                   u_ub/max_y_lim_1,
+                                                   color=u_color,
+                                                   alpha=u_alpha,
+                                                   where=fill,
+                                                   linewidth=0.0,
+                                                   step='pre')
+            policy_ax.fill_between(range(t_start),
+                                   0,
+                                   1,
+                                   color='white',
+                                   linewidth=0.0,
+                                   step='pre')
                     
-            #policy_ax.axvspan(0, 430, facecolor='w', alpha=0.5)
-            #policy_ax.axvspan(0, 430, facecolor='w', alpha=0.5)
-                
     if "acs_fill" in kwargs.keys():
         # fill the ACS plot
         policy_ax.fill_between(range(len(z_ts) + 1),
@@ -1156,11 +1218,7 @@ def stack_plot(instance_name,
     R_mean = np.mean(all_states_ts['R'][:, -1] / population)
     print(f'R End Horizon {R_mean}')
     # Policy
-    lockdown_threshold = policy.lockdown_thresholds[0]
-    # fdmi = policy_params['first_day_month_index']
-    # policy = {(m, y): lockdown_threshold[fdmi[m, y]] for (m, y) in fdmi if fdmi[m, y] < T}
-    # print('Lockdown Threshold:')
-    # print(policy)
+    
     central_path = central_path_id
     hide = 1
     l_style = l_styles['sim']
@@ -1215,26 +1273,26 @@ def stack_plot(instance_name,
             if v == 'ToIHT':
                 if real_new_admission is not None:
                     real_h_plot = ax1.scatter(range(len(real_new_admission)), real_new_admission, color='maroon', label='New hospital admission',zorder=100,s=15)
-            if plot_triggers:
-                #if central_path > 0:
-                #    IYIH_mov_ave = []
-                #    for t in range(T):
-                #        IYIH_mov_ave.append(np.mean(mean_st[v][np.maximum(0, t - 7):t]))
-                #    v_avg = ax1.plot(IYIH_mov_ave, c='black', linestyle=l_style, label=f'Moving Avg. {label_v}')
-                # plotted_lines.append(v_avg[0])
-                for tier_ix, tier in enumerate(policy.tiers):
-                    ax1.plot([policy.lockdown_thresholds[tier_ix][0]]*T, color=tier['color'], linewidth=5)
-                    xpos = np.minimum(405, int(T * 0.65))  #180  #405
-                    xytext = (xpos, lockdown_threshold[xpos] - 20)
-                    if plot_trigger_annotations:
-                        ax1.annotate('Lock-down threshold',
-                                     xy=(120, lockdown_threshold[120]),
-                                     xytext=xytext,
-                                     xycoords='data',
-                                     textcoords='data',
-                                     color='b',
-                                     annotation_clip=True,
-                                     fontsize=text_size + 2)
+            # if plot_triggers:
+            #     #if central_path > 0:
+            #     #    IYIH_mov_ave = []
+            #     #    for t in range(T):
+            #     #        IYIH_mov_ave.append(np.mean(mean_st[v][np.maximum(0, t - 7):t]))
+            #     #    v_avg = ax1.plot(IYIH_mov_ave, c='black', linestyle=l_style, label=f'Moving Avg. {label_v}')
+            #     # plotted_lines.append(v_avg[0])
+            #     for tier_ix, tier in enumerate(policy.tiers):
+            #         ax1.plot([policy.lockdown_thresholds[tier_ix][0]]*T, color=tier['color'], linewidth=5)
+            #         xpos = np.minimum(405, int(T * 0.65))  #180  #405
+            #         xytext = (xpos, lockdown_threshold[xpos] - 20)
+            #         if plot_trigger_annotations:
+            #             ax1.annotate('Lock-down threshold',
+            #                          xy=(120, lockdown_threshold[120]),
+            #                          xytext=xytext,
+            #                          xycoords='data',
+            #                          textcoords='data',
+            #                          color='b',
+            #                          annotation_clip=True,
+            #                          fontsize=text_size + 2)
             if "plot_ACS_triggers" in kwargs.keys():
                 if kwargs["plot_ACS_triggers"]:
                     ax1.plot([policy.acs_thrs]*T, color='k', linewidth=5)
@@ -1254,25 +1312,25 @@ def stack_plot(instance_name,
                              xycoords='axes fraction',
                              color='b',
                              annotation_clip=True)
-        if v == 'ToIHT':
-            if plot_triggers:
-                ax2.plot(lockdown_threshold[:T], 'b-')
-                xytext = (160, lockdown_threshold[160] - 15)
-                ax2.annotate('Trigger - Avg. Daily Hospitalization',
-                             xy=(120, lockdown_threshold[120]),
-                             xytext=xytext,
-                             xycoords='data',
-                             textcoords='data',
-                             color='b',
-                             annotation_clip=True)
-                # ax2.annotate('                                        ',
-                #              xy=(85, lockdown_threshold[85]),
-                #              xytext=xytext,
-                #              xycoords='data',
-                #              textcoords='data',
-                #              arrowprops={'arrowstyle': '-|>'},
-                #              color='b',
-                #              annotation_clip=True)
+        # if v == 'ToIHT':
+        #     if plot_triggers:
+        #         ax2.plot(lockdown_threshold[:T], 'b-')
+        #         xytext = (160, lockdown_threshold[160] - 15)
+        #         ax2.annotate('Trigger - Avg. Daily Hospitalization',
+        #                      xy=(120, lockdown_threshold[120]),
+        #                      xytext=xytext,
+        #                      xycoords='data',
+        #                      textcoords='data',
+        #                      color='b',
+        #                      annotation_clip=True)
+        #         # ax2.annotate('                                        ',
+        #         #              xy=(85, lockdown_threshold[85]),
+        #         #              xytext=xytext,
+        #         #              xycoords='data',
+        #         #              textcoords='data',
+        #         #              arrowprops={'arrowstyle': '-|>'},
+        #         #              color='b',
+        #         #              annotation_clip=True)
     
     # Plotting the policy
     # Plot school closure and cocooning
