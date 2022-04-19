@@ -54,7 +54,7 @@ import seaborn as sns
 # plt.title("Heat Map", fontsize=16)
 # plt.show()
 
-# ---------------Code with June start date and 200+ cases only --------
+# --------------- 200+ cases only (+/- 3 days) --------
 
 # Data Processing
 data = pd.read_csv("/Users/kevinli/Documents/Regression dataset copy.csv")
@@ -114,7 +114,7 @@ for i in range(2):
 plt.title("Heat Map", fontsize=16)
 plt.show()
 
-# --------------- With HOSP --------
+# --------------- With HOSPITALIZATION ADMISSIONS + 200 CASES + --------
 
 data = pd.read_csv("/Users/kevinli/Documents/Regression dataset copy.csv")
 feature=data.drop(['Date','Symptomatic', '7-day new case sum / 100000'],axis=1).values
@@ -123,7 +123,6 @@ target =data['7-day new case sum / 100000'].values
 
 
 #Linear Regression 
-
 
 #Train, test split 
 train,test,train_label,test_label=train_test_split(feature,target,test_size=0.33,random_state=222)
@@ -168,110 +167,3 @@ for i in range(2):
 plt.title("Heat Map", fontsize=16)
 plt.show()
 
-# ------- 3 variable predictor -------------
-
-# data = pd.read_csv("/Users/kevinli/Documents/Regression dataset_three predictor.csv")
-# feature=data.drop(['Date','Symptomatic', '7-day new case sum / 100000'],axis=1).values
-# target =data['7-day new case sum / 100000'].values
-# #Removing past 40 days as outliers (because 7 day moving average is not accurate)
-# target=target[50:-60]
-# feature=feature[50:-60]
-
-# #Linear Regression 
-
-
-# #Train, test split 
-# train,test,train_label,test_label=train_test_split(feature,target,test_size=0.33,random_state=222)
-# reg=LinearRegression(fit_intercept=True)
-# model = reg.fit(train,train_label)
-# predict = model.predict(test)
-# coef = reg.coef_
-# intercept = reg.intercept_
-# print("Linear reg score")
-# print(r2_score(test_label,predict))
-
-# plt.scatter(target, reg.predict(feature))
-# plt.xlabel('Case From Dataset')
-# plt.ylabel('Case Predicted By Model')
-# plt.rcParams["figure.figsize"] = (10,6) # Custom figure size in inches
-# plt.title("Linear Regression_Three predictors")
-
-# #try the model predictors
-# today=reg.predict(feature)
-
-
-# #Logistics Regression
-# for x, label in enumerate(target):
-#       target[x] = 1 if (label >= 200) else 0
-        
-# model = LogisticRegression(random_state=0).fit(feature, target)
-# print("Logistic reg score")
-# print(model.score(feature, target))
-
-
-# #Plot Confusion Matrix 
-# cm = confusion_matrix(target, model.predict(feature))
-# fig, ax = plt.subplots(figsize=(8, 8))
-# ax.imshow(cm)
-# ax.grid(False)
-# ax.xaxis.set(ticks=(0, 1), ticklabels=('Predicted 0s', 'Predicted 1s'))
-# ax.yaxis.set(ticks=(0, 1), ticklabels=('Actual 0s', 'Actual 1s'))
-# ax.set_ylim(1.5, -0.5)
-# for i in range(2):
-#     for j in range(2):
-#         ax.text(j, i, cm[i, j], ha='center', va='center', color='red')
-# plt.title("Heat Map", fontsize=16)
-# plt.show()
-
-# --------------- 3 variable prediction With HOSP --------
-
-# data = pd.read_csv("/Users/kevinli/Documents/regression_dataset_3predictor_withhosp.csv")
-# feature=data.drop(['Date','Symptomatic', '7-day new case sum / 100000'],axis=1).values
-# target =data['7-day new case sum / 100000'].values
-# #Removing past 40 days as outliers (because 7 day moving average is not accurate)
-
-
-# #Linear Regression 
-
-# #Train, test split 
-# train,test,train_label,test_label=train_test_split(feature,target,test_size=0.33,random_state=222)
-# reg=LinearRegression(fit_intercept=True)
-# model = reg.fit(train,train_label)
-# predict = model.predict(test)
-# coef = reg.coef_
-# intercept = reg.intercept_
-# print("Linear reg score")
-# print(r2_score(test_label,predict))
-
-# plt.scatter(target, reg.predict(feature))
-# plt.xlabel('Case From Dataset')
-# plt.ylabel('Case Predicted By Model')
-# plt.rcParams["figure.figsize"] = (10,6) # Custom figure size in inches
-# plt.title("Linear Regression with Hospitalization")
-
-# #try the model predictors
-# today=reg.predict(feature)
-
-
-# #Logistics Regression
-# for x, label in enumerate(target):
-#       target[x] = 1 if (label >= 200) else 0
-        
-# model = LogisticRegression(random_state=0).fit(feature, target)
-# print("Logistic reg score")
-# print(model.score(feature, target))
-
-
-# #Plot Confusion Matrix 
-# cm = confusion_matrix(target, model.predict(feature))
-# fig, ax = plt.subplots(figsize=(8, 8))
-# ax.imshow(cm)
-# ax.grid(False)
-# ax.xaxis.set(ticks=(0, 1), ticklabels=('Predicted 0s', 'Predicted 1s'))
-# ax.yaxis.set(ticks=(0, 1), ticklabels=('Actual 0s', 'Actual 1s'))
-# ax.set_ylim(1.5, -0.5)
-# for i in range(2):
-#     for j in range(2):
-#         ax.text(j, i, cm[i, j], ha='center', va='center', color='red')
-# plt.title("Heat Map", fontsize=16)
-# plt.show()
