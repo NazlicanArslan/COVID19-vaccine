@@ -31,9 +31,9 @@ compartment_names = {
     'ITot': 'Total Infectious',
     'IY': 'Symptomatic',
     'IH': 'General Beds',
-    'IHT_moving': 'Percent of staffed inpatient beds (7-day average)',
+    'IHT_moving': 'Percent of staffed inpatient beds \n(7-day average)',
     'ToIHT_moving': 'COVID-19 Hospital Admissions\n(Seven-day Average)',
-    'ToIHT_total': 'COVID-19 Hospital Admissions\n(Seven-day  Total)',
+    'ToIHT_total': 'COVID-19 Hospital Admissions per 100k \n(Seven-day Total)',
     'D': 'Deaths',
     'R': 'Recovered',
     'S': 'Susceptible',
@@ -521,7 +521,7 @@ def plot_multi_tier_sims(instance_name,
                 T_adm = len(real_new_admission)
                 real_hosp_moving_sum = [real_new_admission[i: min(i + moving_avg_len, T_adm)].sum()* 100000/np.sum(N, axis=(0,1)) for i in range(T_adm)]
                 real_h_plot = ax1.scatter(range(T_adm-7), real_hosp_moving_sum[:T_adm-7], color='maroon', label='New hospital admission',zorder=100,s=15)
-            
+                
               
         if v == 'ToIHT' or v == 'ToICU' or v == 'ToIHT_moving':
             if v == 'ToIHT_moving':
@@ -574,6 +574,8 @@ def plot_multi_tier_sims(instance_name,
                              xycoords='axes fraction',
                              color='b',
                              annotation_clip=True)
+        
+            
         # if v == 'ToIHT':
         #     if plot_triggers:
         #         ax2.plot(lockdown_threshold[:T], 'b-')
@@ -681,6 +683,7 @@ def plot_multi_tier_sims(instance_name,
         
     if vertical_fill:
         if v == 'ToIY_moving':
+            ax1.hlines(hosp_beds, 0, T, linestyle='-')
             #breakpoint()
             for u in surge_states:
                 fill_1 = intervals_surge[u].copy()
@@ -826,7 +829,7 @@ def plot_multi_tier_sims(instance_name,
                                                    where=fill,
                                                    linewidth=0.0,
                                                    step='pre')
-            policy_ax.fill_between(range(t_start),
+            policy_ax.fill_between(range(t_start+1),
                                    0,
                                    1,
                                    color='white',
@@ -936,6 +939,12 @@ def plot_multi_tier_sims(instance_name,
     ax1.tick_params(axis='x', length=5, width=2)
     
     # Policy axis span 0 - 1
+    if v == 'IHT_moving':
+        ax1.yaxis.set_ticks(np.arange(0, 1.001, 0.2))
+        ax1.yaxis.set_ticklabels(
+        [f' {np.round(t*100)}%' for t in np.arange(0, 1.001, 0.2)],
+        rotation=0,
+        fontsize=22)
     #policy_ax.yaxis.set_ticks(np.arange(0, 1.001, 0.1))
     policy_ax.tick_params(
         axis='both',  # changes apply to the x-axis

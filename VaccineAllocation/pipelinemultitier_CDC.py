@@ -109,7 +109,7 @@ def icu_pipeline(file_path, instance_name, real_hosp=None, real_admit=None, hosp
                             policy_params=best_params,
                             n_replicas=n_replicas,
                             config=config,
-                            hosp_beds_list=None,
+                            hosp_beds_list=[200],
                             real_new_admission=real_case_total,
                             real_new_admission_unvax = None,
                             real_new_admission_vax =None, 
