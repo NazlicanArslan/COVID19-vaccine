@@ -16,7 +16,7 @@ def fill_template(data, template_file, report_file):
     
     for k, v in data.items():
         tex_template = tex_template.replace(k, str(v), 1)
-    
+   
     tex_template = tex_template.replace('INSERT-TRIGGER-DESCRIPTION', trigger_summary(data['policy']))
     
     with open(report_file, 'w') as out_rep:
@@ -146,31 +146,31 @@ def generate_report_tier(report_data, template_file = "report_template_tier.tex"
         os.system(f"mkdir {reports_pdf_path}")
     
     # Copy figures and rename paths
-    os.system(f"scp {report_data['IHT_PLOT_FILE']} {reporting_path / 'fig1.pdf'}")
-    os.system(f"scp {report_data['ToIHT_PLOT_FILE']} {reporting_path / 'fig2.pdf'}")
-    report_data['IHT_PLOT_FILE'] = reporting_path / 'fig1.pdf'
-    report_data['ToIHT_PLOT_FILE'] = reporting_path / 'fig2.pdf'
+    # os.system(f"scp {report_data['IHT_PLOT_FILE']} {reporting_path / 'fig1.pdf'}")
+    # os.system(f"scp {report_data['ToIHT_PLOT_FILE']} {reporting_path / 'fig2.pdf'}")
+    # report_data['IHT_PLOT_FILE'] = reporting_path / 'fig1.pdf'
+    # report_data['ToIHT_PLOT_FILE'] = reporting_path / 'fig2.pdf'
     
-    os.system(f"scp {report_data['ICU_PLOT_FILE']} {reporting_path / 'fig3.pdf'}")
-    os.system(f"scp {report_data['ToICU_PLOT_FILE']} {reporting_path / 'fig4.pdf'}")
-    report_data['ICU_PLOT_FILE'] = reporting_path / 'fig3.pdf'
-    report_data['ToICU_PLOT_FILE'] = reporting_path / 'fig4.pdf'
+    # os.system(f"scp {report_data['ICU_PLOT_FILE']} {reporting_path / 'fig3.pdf'}")
+    # os.system(f"scp {report_data['ToICU_PLOT_FILE']} {reporting_path / 'fig4.pdf'}")
+    # report_data['ICU_PLOT_FILE'] = reporting_path / 'fig3.pdf'
+    # report_data['ToICU_PLOT_FILE'] = reporting_path / 'fig4.pdf'
     
     fill_template(report_data, template_file, tex_file)
     #os.system(f"/Library/TeX/texbin/pdflatex  -output-directory={output_path} {tex_file}")
     os.system("/Library/TeX/texbin/pdflatex")
     # Clean folder
-    try:
-        os.system(f"rm {reporting_path / 'fig1.pdf'}")
-        os.system(f"rm {reporting_path / 'fig2.pdf'}")
-        os.system(f"rm {reporting_path / 'fig3.pdf'}")
-        os.system(f"rm {reporting_path / 'fig4.pdf'}")
-    except Exception:
-        pass
+    # try:
+    #     os.system(f"rm {reporting_path / 'fig1.pdf'}")
+    #     os.system(f"rm {reporting_path / 'fig2.pdf'}")
+    #     os.system(f"rm {reporting_path / 'fig3.pdf'}")
+    #     os.system(f"rm {reporting_path / 'fig4.pdf'}")
+    # except Exception:
+    #     pass
     
-    # Send email if valid address provided
-    if to_email and '@' in to_email:
-        send_report(instance_name, to_email, pdf_file)
+    # # Send email if valid address provided
+    # if to_email and '@' in to_email:
+    #     send_report(instance_name, to_email, pdf_file)
     
     os.system(f"scp {pdf_file} {reports_pdf_path}")
 

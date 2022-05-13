@@ -315,9 +315,9 @@ class CDCTierPolicy():
     
     def get_surge_history(self):
         return self._surge_history
-    
+ 
     def __repr__(self):
-        p_str = "CDC_community_levels"
+        p_str =  str([("CDC", self.case_threshold)])
         p_str = p_str.replace(' ', '')
         p_str = p_str.replace(',', '_')
         p_str = p_str.replace("'", "")

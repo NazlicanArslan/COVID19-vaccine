@@ -85,6 +85,7 @@ def residual_error(x_beta, **kwargs):
              0.6446,
              0.6869,
              0.7186,
+             x_beta[4],
              x_beta[5],
              x_beta[6],
              x_beta[7]]
@@ -103,6 +104,7 @@ def residual_error(x_beta, **kwargs):
               0.6446,
               0.6869,
               0.7186,
+              x_beta[4],
               x_beta[5],
               x_beta[6],
               x_beta[7]]
@@ -158,7 +160,7 @@ def residual_error(x_beta, **kwargs):
     instance.epi.alpha2_omic = x_beta[1]
     instance.epi.alpha3_omic = x_beta[2]
     instance.epi.alpha4_omic= x_beta[3]
-    instance.epi.immune_escape_rate = x_beta[4]
+    instance.epi.immune_escape_rate = 0.22
     print('new value: ', x_beta)
     selected_vaccine_policy.reset_vaccine_history(instance, -1)
   
@@ -286,12 +288,13 @@ def run_fit(instance,
                         dt.date(2021, 8, 22),
                         dt.date(2021, 9, 24),
                         dt.date(2021, 10, 25),
+                        dt.date(2021, 12, 8),
                         dt.date(2022, 1, 5),
                         dt.date(2022, 3, 10),
-                        dt.date(2022, 4, 4)] 
+                        dt.date(2022, 4, 20)] 
 
   
-        x = np.array([0.6, 0.15, 3.5, 0.002, 0.425, 0.57, 0.68, 0.55])       
+        x = np.array([0.6, 0.15, 3.5, 0.002, 0.57, 0.55, 0.68, 0.55])       
 
     selected_vaccine_policy = VAP.vaccine_policy(instance, vaccines, 'deterministic')
     
@@ -328,6 +331,7 @@ def run_fit(instance,
              0.6446,
              0.6869,
              0.7186,
+             opt_tr_reduction[4],
              opt_tr_reduction[5],
              opt_tr_reduction[6],
              opt_tr_reduction[7]])
@@ -346,6 +350,7 @@ def run_fit(instance,
               0.6446,
               0.6869,
               0.7186,
+              opt_tr_reduction[4],
               opt_tr_reduction[5],
               opt_tr_reduction[6],
               opt_tr_reduction[7]])
@@ -361,7 +366,7 @@ def run_fit(instance,
     print('alpha2_omic=', opt_tr_reduction[1])
     print('alpha3_omic=', opt_tr_reduction[2])
     print('alpha4_omic=', opt_tr_reduction[3])
-    print('immune escape', opt_tr_reduction[4])
+    print('immune escape', 0.22)
     
     #breakpoint()
     table = pd.DataFrame({'start_date': change_dates[:-1], 'end_date': end_date, 'contact_reduction': contact_reduction, 'beta': betas, 'cocoon': cocoon})

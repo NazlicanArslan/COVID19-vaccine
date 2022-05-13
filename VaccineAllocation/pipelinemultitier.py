@@ -3,10 +3,10 @@ import os
 import pandas as pd
 from datetime import datetime as dt
 import numpy as np
-from VaccineAllocation import load_config_file,config_path
-from reporting.plotting import plot_multi_tier_sims, stack_plot
+from VaccineAllocation import load_config_file,config_path, plots_path
+from reporting.plotting_CDC import plot_multi_tier_sims
 from reporting.report_pdf import generate_report
-from reporting.output_processors import build_report,build_report_tiers
+from reporting.output_processors import build_report_tiers
 
 
 def read_hosp(file_path, start_date, typeInput="hospitalized"):
@@ -25,12 +25,16 @@ def read_hosp(file_path, start_date, typeInput="hospitalized"):
     
     return real_hosp
     
-def icu_pipeline(file_path, instance_name, real_hosp=None, real_admit=None, hosp_beds_list=None, icu_beds_list=None, real_icu=None, real_death=None,
-                 iht_limit=None, icu_limit=None, toiht_limit=None, toicu_limit=None, t_start = -1, to_email=None, is_representative_path_bool=False,
-                 central_id_path = 0, cap_id_path = 0, acs_type = 'IHT'):
-    
+def icu_pipeline(file_path, 
+                 instance_name, 
+                 real_hosp=None, 
+                 real_admit=None,
+                 real_icu=None,
+                 is_CDC=False,
+                 **kwargs):
+
+    plot_end = kwargs['plot_end']
     # Read data
-    print(file_path)
     with open(file_path, 'rb') as outfile:
         read_output = pickle.load(outfile)
     instance, interventions, best_params, best_policy, vaccines, profiles, sim_output, expected_cost, config, seeds_info = read_output
@@ -38,556 +42,148 @@ def icu_pipeline(file_path, instance_name, real_hosp=None, real_admit=None, hosp
     # Get only desired profiles
     if real_hosp is None:
         real_hosp = instance.cal.real_hosp
-    last_day_hosp_data = len(real_hosp) - 1
-    lb_hosp = real_hosp[-1] * (1 - config['div_filter_frac'])
-    ub_hosp = real_hosp[-1] * (1 + config['div_filter_frac'])
-   
     profiles = [p for p in profiles]
 
     n_replicas = len(profiles)
-    T = np.minimum(instance.T, instance.T)  
-    
-    plot_trigger_ToICU = False
+    T = instance.cal.calendar_ix[plot_end]
     plot_trigger_ToIHT = False
-    plot_trigger_ICU = False
     plot_trigger_ToIHT = True
-        
-    icu_beds_list = [instance.icu]
-    real_icu_ratio = [real_icu[i]/(real_hosp[i]) for i in range(len(real_icu))  if real_hosp[i] != 0]
-    # plot the IHT comparison
-    IHD_plot = plot_multi_tier_sims(instance_name,
-                            instance,
-                            best_policy,
-                            profiles, ['sim'] * len(profiles),
-                            real_icu,
-                            plot_left_axis=['ICU'],
-                            plot_right_axis=[],
-                            T=T,
-                            interventions=interventions,
-                            show=True,
-                            align_axes=True,
-                            plot_triggers=plot_trigger_ICU,
-                            plot_trigger_annotations=False,
-                            plot_legend=False,
-                            y_lim=icu_limit,
-                            policy_params=best_params,
-                            n_replicas=n_replicas,
-                            config=config,
-                            hosp_beds_list= icu_beds_list,
-                            real_new_admission=real_admit,
-                            real_new_admission_unvax = None,
-                            real_hosp_or_icu=real_icu,
-                            t_start = t_start,
-                            is_representative_path=is_representative_path_bool,
-                            central_path_id = central_id_path,
-                            cap_path_id = cap_id_path,
-                            vertical_fill = not plot_trigger_ICU,
-                            history_white = True,
-                            acs_type = acs_type
-                            )
-    IHD_plot = plot_multi_tier_sims(instance_name,
-                            instance,
-                            best_policy,
-                            profiles, ['sim'] * len(profiles),
-                            real_icu,
-                            plot_left_axis=['ICU_ratio'],
-                            plot_right_axis=[],
-                            T=T,
-                            interventions=interventions,
-                            show=True,
-                            align_axes=True,
-                            plot_triggers=plot_trigger_ICU,
-                            plot_trigger_annotations=False,
-                            plot_legend=False,
-                            y_lim=1,
-                            policy_params=best_params,
-                            n_replicas=n_replicas,
-                            config=config,
-                            hosp_beds_list= icu_beds_list,
-                            real_new_admission=real_admit,
-                            real_new_admission_unvax = None,
-                            real_hosp_or_icu=real_icu_ratio,
-                            t_start = t_start,
-                            is_representative_path=is_representative_path_bool,
-                            central_path_id = central_id_path,
-                            cap_path_id = cap_id_path,
-                            vertical_fill = not plot_trigger_ICU,
-                            history_white = True,
-                            acs_type = acs_type
-                            )
-    
-    # IHD_plot = plot_multi_tier_sims(instance_name,
-    #                         instance,
-    #                         best_policy,
-    #                         profiles, ['sim'] * len(profiles),
-    #                         real_icu,
-    #                         plot_left_axis=['ToIY_moving'],
-    #                         plot_right_axis=[],
-    #                         T=T,
-    #                         interventions=interventions,
-    #                         show=True,
-    #                         align_axes=True,
-    #                         plot_triggers=plot_trigger_ICU,
-    #                         plot_trigger_annotations=False,
-    #                         plot_legend=False,
-    #                         y_lim=800,
-    #                         policy_params=best_params,
-    #                         n_replicas=n_replicas,
-    #                         config=config,
-    #                         hosp_beds_list= icu_beds_list,
-    #                         real_new_admission=case_ad,
-    #                         real_new_admission_unvax = None,
-    #                         real_hosp_or_icu=real_icu,
-    #                         t_start = t_start,
-    #                         is_representative_path=is_representative_path_bool,
-    #                         central_path_id = central_id_path,
-    #                         cap_path_id = cap_id_path,
-    #                         vertical_fill = not plot_trigger_ICU,
-    #                         history_white = True,
-    #                         acs_type = acs_type
-    #                         )
-    
-    # plot the IHT comparison
-    IHD_plot2 = plot_multi_tier_sims(instance_name,
-                            instance,
-                            best_policy,
-                            profiles, ['sim'] * len(profiles),
-                            real_hosp,
-                            plot_left_axis=['IHT'],
-                            plot_right_axis=[],
-                            T=T,
-                            interventions=interventions,
-                            show=True,
-                            align_axes=True,
-                            plot_triggers=False,
-                            plot_trigger_annotations=False,
-                            plot_legend=False,
-                            y_lim=iht_limit,
-                            policy_params=best_params,
-                            n_replicas=n_replicas,
-                            config=config,
-                            hosp_beds_list= hosp_beds_list,
-                            real_new_admission=real_admit,
-                            real_new_admission_unvax = None,
-                            real_new_admission_vax =None, 
-                            real_hosp_or_icu=real_hosp,
-                            t_start = t_start,
-                            is_representative_path=is_representative_path_bool,
-                            central_path_id = central_id_path,
-                            cap_path_id = cap_id_path,
-                            history_white = True,
-                            acs_type = acs_type
-                            )
-    
-    #plot the ToICU comparison
-    # IYIH_plot = plot_multi_tier_sims(instance_name,
-    #                         instance,
-    #                         best_policy,
-    #                         profiles, ['sim'] * len(profiles),
-    #                         real_hosp,
-    #                         plot_left_axis=['ToICU'],
-    #                         plot_right_axis=[],
-    #                         T=T,
-    #                         interventions=interventions,
-    #                         show=False,
-    #                         align_axes=True,
-    #                         plot_triggers=plot_trigger_ToICU,
-    #                         plot_trigger_annotations=False,
-    #                         plot_legend=False,
-    #                         y_lim=toicu_limit,
-    #                         policy_params=best_params,
-    #                         n_replicas=n_replicas,
-    #                         config=config,
-    #                         hosp_beds_list=None,
-    #                         real_new_admission=None,
-    #                         real_new_admission_unvax = None,
-    #                         real_new_admission_vax =None, 
-    #                         t_start = t_start,
-    #                         is_representative_path=False,
-    #                         central_path_id = central_id_path,
-    #                         cap_path_id = cap_id_path,
-    #                         history_white = True,
-    #                         acs_type = acs_type
-    #                         )
-    
-    IYIH_plot2 = plot_multi_tier_sims(instance_name,
-                            instance,
-                            best_policy,
-                            profiles, ['sim'] * len(profiles),
-                            real_hosp,
-                            plot_left_axis=['ToIHT_moving'],
-                            plot_right_axis=[],
-                            T=T,
-                            interventions=interventions,
-                            show=True,
-                            align_axes=True,
-                            plot_triggers=plot_trigger_ToIHT,
-                            plot_trigger_annotations=False,
-                            plot_legend=False,
-                            y_lim=toiht_limit,
-                            policy_params=best_params,
-                            n_replicas=n_replicas,
-                            config=config,
-                            hosp_beds_list=None,
-                            real_new_admission=real_admit,
-                            real_new_admission_unvax = None,
-                            real_new_admission_vax =None, 
-                            real_hosp_or_icu=real_icu,
-                            t_start = t_start,
-                            is_representative_path=is_representative_path_bool,
-                            central_path_id = central_id_path,
-                            cap_path_id = cap_id_path,
-                            vertical_fill = not plot_trigger_ToIHT,
-                            nday_avg = 7,
-                            history_white = True,
-                            acs_type = acs_type
-                            )   
-    # S_plot0 = plot_multi_tier_sims(instance_name,
-    #                         instance,
-    #                         best_policy,
-    #                         profiles, ['sim'] * len(profiles),
-    #                         real_hosp,
-    #                         plot_left_axis=['S0'],
-    #                         plot_right_axis=[],
-    #                         T=T,
-    #                         interventions=interventions,
-    #                         show=True,
-    #                         align_axes=True,
-    #                         plot_triggers=False,
-    #                         plot_trigger_annotations=False,
-    #                         plot_legend=False,
-    #                         y_lim=4000000,
-    #                         policy_params=best_params,
-    #                         n_replicas=n_replicas,
-    #                         config=config,
-    #                         hosp_beds_list=None,
-    #                         real_new_admission=None,
-    #                         real_new_admission_unvax = None,
-    #                         real_new_admission_vax =None, 
-    #                         real_hosp_or_icu=None,
-    #                         t_start = t_start,
-    #                         is_representative_path=False,
-    #                         central_path_id = central_id_path,
-    #                         cap_path_id = cap_id_path,
-    #                         history_white = True,
-    #                         acs_type = acs_type
-    #                         )
-    # S_plot1 = plot_multi_tier_sims(instance_name,
-    #                         instance,
-    #                         best_policy,
-    #                         profiles, ['sim'] * len(profiles),
-    #                         real_hosp,
-    #                         plot_left_axis=['S1'],
-    #                         plot_right_axis=[],
-    #                         T=T,
-    #                         interventions=interventions,
-    #                         show=True,
-    #                         align_axes=True,
-    #                         plot_triggers=False,
-    #                         plot_trigger_annotations=False,
-    #                         plot_legend=False,
-    #                         y_lim=4000000,
-    #                         policy_params=best_params,
-    #                         n_replicas=n_replicas,
-    #                         config=config,
-    #                         hosp_beds_list=None,
-    #                         real_new_admission=None,
-    #                         real_new_admission_unvax = None,
-    #                         real_new_admission_vax =None, 
-    #                         real_hosp_or_icu=None,
-    #                         t_start = t_start,
-    #                         is_representative_path=False,
-    #                         central_path_id = central_id_path,
-    #                         cap_path_id = cap_id_path,
-    #                         history_white = True,
-    #                         acs_type = acs_type
-    #                         )
-    
-    # S_plot2 = plot_multi_tier_sims(instance_name,
-    #                         instance,
-    #                         best_policy,
-    #                         profiles, ['sim'] * len(profiles),
-    #                         real_hosp,
-    #                         plot_left_axis=['S2'],
-    #                         plot_right_axis=[],
-    #                         T=T,
-    #                         interventions=interventions,
-    #                         show=True,
-    #                         align_axes=True,
-    #                         plot_triggers=False,
-    #                         plot_trigger_annotations=False,
-    #                         plot_legend=False,
-    #                         y_lim=4000000,
-    #                         policy_params=best_params,
-    #                         n_replicas=n_replicas,
-    #                         config=config,
-    #                         hosp_beds_list=None,
-    #                         real_new_admission=None,
-    #                         real_new_admission_unvax = None,
-    #                         real_new_admission_vax =None, 
-    #                         real_hosp_or_icu=None,
-    #                         t_start = t_start,
-    #                         is_representative_path=False,
-    #                         central_path_id = central_id_path,
-    #                         cap_path_id = cap_id_path,
-    #                         history_white = True,
-    #                         acs_type = acs_type
-    #                         )
      
-    # S_plot3 = plot_multi_tier_sims(instance_name,
-    #                         instance,
-    #                         best_policy,
-    #                         profiles, ['sim'] * len(profiles),
-    #                         real_hosp,
-    #                         plot_left_axis=['S3'],
-    #                         plot_right_axis=[],
-    #                         T=T,
-    #                         interventions=interventions,
-    #                         show=True,
-    #                         align_axes=True,
-    #                         plot_triggers=False,
-    #                         plot_trigger_annotations=False,
-    #                         plot_legend=False,
-    #                         y_lim=4000000,
-    #                         policy_params=best_params,
-    #                         n_replicas=n_replicas,
-    #                         config=config,
-    #                         hosp_beds_list=None,
-    #                         real_new_admission=None,
-    #                         real_new_admission_unvax = None,
-    #                         real_new_admission_vax =None, 
-    #                         real_hosp_or_icu=None,
-    #                         t_start = t_start,
-    #                         is_representative_path=is_representative_path_bool,
-    #                         central_path_id = central_id_path,
-    #                         cap_path_id = cap_id_path,
-    #                         history_white = True,
-    #                         acs_type = acs_type
-    #                         )
-
+    moving_avg_len = config['moving_avg_len']
+    N = instance.N
+    #real_icu_ratio = [real_icu[i]/(real_hosp[i]) for i in range(len(real_icu))  if real_hosp[i] != 0]
+    real_ToIHT_total = [np.array(real_admit)[i: min(i + moving_avg_len, T)].sum()* 100000/np.sum(N, axis=(0,1))  for i in range(T-moving_avg_len)]
+    real_ToIHT_average = [np.array(real_admit)[i: min(i + moving_avg_len, T)].mean() for i in range(T-moving_avg_len)]
+    real_percent_IH = [np.array(real_hosp)[i: min(i + moving_avg_len, T)].mean()/instance.hosp_beds for i in range(T-moving_avg_len)]
+    real_case_total = [np.array(case_ad)[i: min(i + moving_avg_len, T)].sum()* 100000/np.sum(N, axis=(0,1)) for i in range(T-moving_avg_len)]
     
+    y_lim = {
+        'ToIY_moving': 1500,
+        'ToIHT_total': 60,
+        'ToIHT_moving': 200,
+        'ICU': 500,
+        'IHT_moving': 1,
+        'D': 1500}
+ 
+    cap = {
+        'ToIY_moving': 200,
+        'ToIHT_total': None,
+        'ToIHT_moving': None,
+        'ICU': 150,
+        'IHT_moving': None,
+        'D': None}
     
-    IYIH_plot2 = plot_multi_tier_sims(instance_name,
+    real_data = {'ToIY_moving': real_case_total,
+                 'ToIHT_total': real_ToIHT_total,
+                 'ToIHT_moving': real_ToIHT_average,
+                 'ICU': real_icu,
+                 'IHT_moving': real_percent_IH,
+                 'D': real_death}
+    
+    if is_CDC:
+        comp_to_plot = {'ToIY_moving', 'ToIHT_total', 'IHT_moving', 'ToIHT_moving', 'ICU', 'D'}
+    else:
+        comp_to_plot = {'ToIHT_moving', 'ICU', 'D'}
+        
+    for comp in comp_to_plot:
+        plot = plot_multi_tier_sims(instance_name,
                             instance,
                             best_policy,
                             profiles, ['sim'] * len(profiles),
-                            real_hosp,
-                            plot_left_axis=['ToIY_moving'],
+                            plot_left_axis=[comp],
                             plot_right_axis=[],
-                            T=T,
                             interventions=interventions,
                             show=True,
                             align_axes=True,
                             plot_triggers=plot_trigger_ToIHT,
-                            plot_trigger_annotations=False,
+                            plot_trigger_annotations=True if comp in {'ToIHT_total', 'ToIHT_moving', 'IHT_moving'} else False,
                             plot_legend=False,
-                            y_lim=1050,
+                            y_lim=y_lim[comp],
                             policy_params=best_params,
                             n_replicas=n_replicas,
                             config=config,
-                            hosp_beds_list=None,
-                            real_new_admission=case_ad,
-                            real_new_admission_unvax = None,
-                            real_new_admission_vax =None, 
-                            real_hosp_or_icu=real_icu,
-                            t_start = t_start,
-                            is_representative_path=is_representative_path_bool,
-                            central_path_id = central_id_path,
-                            cap_path_id = cap_id_path,
-                            vertical_fill = not plot_trigger_ToIHT,
-                            nday_avg = 7,
-                            history_white = True,
-                            acs_type = acs_type
-                            )   
+                            real_data=real_data[comp],
+                            vertical_fill=  True if comp in {'ToIY_moving', 'D'} else False,
+                            dali_plot=True if comp == 'ICU' else False,
+                            capacity=cap[comp],
+                            **kwargs
+                            )  
+ 
+def report(file_path, 
+           instance_name, 
+           real_hosp=None, 
+           real_admit=None, 
+           real_icu=None,
+           **kwargs):
+    # Read data
+    with open(file_path, 'rb') as outfile:
+        read_output = pickle.load(outfile)
+    instance, interventions, best_params, best_policy, vaccines, profiles, sim_output, expected_cost, config, seeds_info = read_output
+    icu_beds_list = [instance.icu]
+    build_report_tiers(instance_name,
+                        instance,
+                        best_policy,
+                        profiles,
+                        config=config,
+                        interventions=interventions,
+                        policy_params=best_params,
+                        stat_start=instance.cal.calendar[t_start+1],
+                        stat_end=dt(2020,9,1),
+                        central_id_path=kwargs['central_id_path'])
     
-    # IYIH_plot2 = plot_multi_tier_sims(instance_name,
-    #                         instance,
-    #                         best_policy,
-    #                         profiles, ['sim'] * len(profiles),
-    #                         real_hosp,
-    #                         plot_left_axis=['ToIHT_unvac'],
-    #                         plot_right_axis=[],
-    #                         T=T,
-    #                         interventions=interventions,
-    #                         show=True,
-    #                         align_axes=True,
-    #                         plot_triggers=plot_trigger_ToIHT,
-    #                         plot_trigger_annotations=False,
-    #                         plot_legend=False,
-    #                         y_lim=toiht_limit,
-    #                         policy_params=best_params,
-    #                         n_replicas=n_replicas,
-    #                         config=config,
-    #                         hosp_beds_list=None,
-    #                         real_new_admission=real_admit,
-    #                         real_new_admission_unvax = real_admit_unvax,
-    #                         real_new_admission_vax =None, 
-    #                         real_hosp_or_icu=real_icu,
-    #                         t_start = t_start,
-    #                         is_representative_path=is_representative_path_bool,
-    #                         central_path_id = central_id_path,
-    #                         cap_path_id = cap_id_path,
-    #                         vertical_fill = True,
-    #                         nday_avg = 7,
-    #                         history_white = True,
-    #                         acs_type = acs_type
-    #                         )  
-    
-    # IYIH_plot2 = plot_multi_tier_sims(instance_name,
-    #                         instance,
-    #                         best_policy,
-    #                         profiles, ['sim'] * len(profiles),
-    #                         real_hosp,
-    #                         plot_left_axis=['ToIHT_vac'],
-    #                         plot_right_axis=[],
-    #                         T=T,
-    #                         interventions=interventions,
-    #                         show=True,
-    #                         align_axes=True,
-    #                         plot_triggers=plot_trigger_ToIHT,
-    #                         plot_trigger_annotations=False,
-    #                         plot_legend=False,
-    #                         y_lim=toiht_limit,
-    #                         policy_params=best_params,
-    #                         n_replicas=n_replicas,
-    #                         config=config,
-    #                         hosp_beds_list=None,
-    #                         real_new_admission=real_admit,
-    #                         real_new_admission_unvax = None,
-    #                         real_new_admission_vax = real_admit_vax,
-    #                         real_hosp_or_icu=real_icu,
-    #                         t_start = t_start,
-    #                         is_representative_path=is_representative_path_bool,
-    #                         central_path_id = central_id_path,
-    #                         cap_path_id = cap_id_path,
-    #                         vertical_fill = True,
-    #                         nday_avg = 7,
-    #                         history_white = True,
-    #                         acs_type = acs_type
-    #                         )  
-    IHD_plot = plot_multi_tier_sims(instance_name,
-                            instance,
-                            best_policy,
-                            profiles, ['sim'] * len(profiles),
-                            real_icu,
-                            plot_left_axis=['D'],
-                            plot_right_axis=[],
-                            T=T,
-                            interventions=interventions,
-                            show=True,
-                            align_axes=True,
-                            plot_triggers=plot_trigger_ICU,
-                            plot_trigger_annotations=False,
-                            plot_legend=False,
-                            y_lim=5000,
-                            policy_params=best_params,
-                            n_replicas=n_replicas,
-                            config=config,
-                            hosp_beds_list= icu_beds_list,
-                            real_new_admission=real_admit,
-                            real_new_admission_unvax = None,
-                            real_hosp_or_icu=real_death,
-                            t_start = t_start,
-                            is_representative_path=is_representative_path_bool,
-                            central_path_id = central_id_path,
-                            cap_path_id = cap_id_path,
-                            vertical_fill = not plot_trigger_ICU,
-                            history_white = True,
-                            acs_type = acs_type
-                            ) 
-    # ICU_stacked_plot = stack_plot(instance_name+"_stacked",
-    #                               instance,
-    #                               best_policy,
-    #                               profiles, ['sim'] * len(profiles),
-    #                               real_hosp,
-    #                               plot_left_axis=['ICU'],
-    #                               plot_right_axis=[],
-    #                               T=T,
-    #                               interventions=interventions,
-    #                               show=False,
-    #                               align_axes=False,
-    #                               plot_triggers=False, #set false when looking at total hospitalizations
-    #                               plot_trigger_annotations=False,
-    #                               plot_legend=False,
-    #                               y_lim=iht_limit,
-    #                               policy_params=best_params,
-    #                               n_replicas=n_replicas,
-    #                               config=config,
-    #                               hosp_beds_list=icu_beds_list,
-    #                               real_new_admission=real_admit,
-    #                               real_icu_patients=real_icu,
-    #                               real_hosp_or_icu=real_icu,
-    #                               period=1,
-    #                               is_representative_path=is_representative_path_bool,
-    #                               t_start = t_start,
-    #                               central_path_id = central_id_path,
-    #                               cap_path_id = cap_id_path,
-    #                               history_white = True)
-    
-    IHT_stacked_plot = stack_plot(instance_name+"_stacked",
-                                  instance,
-                                  best_policy,
-                                  profiles, ['sim'] * len(profiles),
-                                  real_hosp,
-                                  plot_left_axis=['ICU'],
-                                  plot_right_axis=[],
-                                  T=T,
-                                  interventions=interventions,
-                                  show=False,
-                                  align_axes=False,
-                                  plot_triggers=False, #set false when looking at total hospitalizations
-                                  plot_trigger_annotations=False,
-                                  plot_legend=False,
-                                  y_lim=icu_limit,
-                                  policy_params=best_params,
-                                  n_replicas=n_replicas,
-                                  config=config,
-                                  hosp_beds_list=icu_beds_list,
-                                  real_new_admission=real_admit,
-                                  real_icu_patients=real_icu,
-                                  real_hosp_or_icu=real_icu,
-                                  period=1,
-                                  is_representative_path=False,
-                                  t_start = t_start,
-                                  central_path_id = central_id_path,
-                                  cap_path_id = central_id_path,
-                                  history_white = True)
-    
-    if hosp_beds_list is None:
-        hosp_beds_list = [instance.hosp_beds]
-    if icu_beds_list is None:
-        icu_beds_list = [instance.icu]
-
 if __name__ == "__main__":
     # list all .p files from the output folder
     fileList = os.listdir("output")
     for instance_raw in fileList:
         if ".p" in instance_raw:
             if "austin" in instance_raw:
-                file_path = "instances/austin/austin_real_hosp_updated.csv"
+                file_path = "instances/austin/austin_real_hosp_May2020.csv"
                 start_date = dt(2020,2,28)
-                end_history = dt(2022,4,4)
-                real_hosp = read_hosp(file_path, start_date)
-                hosp_beds_list = None
-                file_path = "instances/austin/austin_hosp_ad_updated.csv"
-                hosp_ad = read_hosp(file_path, start_date, "admits")
-                file_path = "instances/austin/austin_real_case.csv"
-                case_ad = read_hosp(file_path, start_date, "admits")
-                file_path = "instances/austin/austin_real_icu_updated.csv"
-                real_icu = read_hosp(file_path, start_date)
-                file_path = "instances/austin/austin_real_cum_total_death.csv"
-                real_death = read_hosp(file_path, start_date)
-                iht_limit = 2000
-                icu_limit = 500
-                toiht_limit = 150
-                toicu_limit = 100
-                hosp_beds_list = [1100]
-                icu_beds_list = None
+                end_history = dt(2020,4,30)
                 t_start =(end_history - start_date).days
-                central_id_path = 0
-                acs_type = 'ICU'
+                real_hosp = read_hosp(file_path, start_date)
+                file_path = "instances/austin/austin_hosp_ad_May2020.csv"
+                hosp_ad = read_hosp(file_path, start_date, "admits")
+                file_path = "instances/austin/austin_real_case_May2020.csv"
+                case_ad = read_hosp(file_path, start_date, "admits")
+                file_path = "instances/austin/austin_real_icu_May2020.csv"
+                real_icu = read_hosp(file_path, start_date)
+                file_path = "instances/austin/austin_real_cum_total_death_May2020.csv"
+                real_death = read_hosp(file_path, start_date)
                 
+            kwargs_plotting = {
+                'central_id_path': 0,
+                'acs_type': 'ICU',
+                'plot_end': dt(2020,9,1),
+                'is_representative_path': False,
+                'history_white': True,
+                't_start': t_start,
+                'x_axis_tick': 2}
+            
             instance_name = instance_raw[:-2]
             path_file = f'output/{instance_name}.p'
-            icu_pipeline(path_file, instance_name, real_hosp, hosp_ad, hosp_beds_list, icu_beds_list, real_icu, real_death,
-                          iht_limit, icu_limit, toiht_limit, toicu_limit, t_start, None, False, central_id_path, central_id_path, acs_type)
+            if 'CDC' in path_file:
+                is_CDC = True
+            else:
+                is_CDC = False
+            icu_pipeline(path_file, 
+                          instance_name, 
+                          real_hosp, 
+                          hosp_ad, 
+                          real_icu,
+                          is_CDC=is_CDC,
+                          **kwargs_plotting)
+            
+
+            kwargs_reporting = {'central_id_path': 0}
+            report(path_file, 
+                    instance_name, 
+                    real_hosp, 
+                    hosp_ad, 
+                    real_icu,
+                    **kwargs_reporting
+                    )
+   
+            
+     
+            
