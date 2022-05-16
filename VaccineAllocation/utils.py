@@ -53,6 +53,10 @@ def print_profiling_log(logger):
 def parse_arguments():
     parser = argparse.ArgumentParser("Parameters for trigger optimization")
     parser.add_argument("city", metavar='c', type=str, help='City to simulate')
+    parser.add_argument("-det",
+                        default=False,
+                        type=bool,
+                        help='True: it will run the deterministic path if False it will run stochastic path')
     parser.add_argument("-f",
                         metavar='FILENAME',
                         default='setup_data.json',

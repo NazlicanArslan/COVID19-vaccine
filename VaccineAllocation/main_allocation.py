@@ -16,7 +16,7 @@ if __name__ == '__main__':
     from trigger_policies import MultiTierPolicy as MTP
     from trigger_policies import CDCTierPolicy as CTP
     from vaccine_policies import VaccineAllocationPolicy as VAP
-    from policy_search_functions import trigger_policy_search
+    from policy_search_functions import trigger_policy_search, trigger_policy_search_det
     
     # Parse city and get corresponding instance
     instance = load_instance(args.city, setup_file_name=args.f, transmission_file_name=args.tr, hospitalization_file_name=args.hos)
@@ -68,7 +68,7 @@ if __name__ == '__main__':
         elif given_vaccine_policy_no == 4:
             selected_vaccine_policy = VAP.sort_contact_matrix_vaccine_policy(instance, vaccines)
         elif given_vaccine_policy_no == 5:
-            selected_vaccine_policy = VAP.no_vaccine_policy(instance, vaccines)
+            selected_vaccine_policy = VAP.no_vaccine_policy(instance, vaccines, 'deterministic')
         elif given_vaccine_policy_no == 6:
             selected_vaccine_policy = VAP.phase_1b_policy(instance, vaccines, args.percentage)
         elif given_vaccine_policy_no == 7:
@@ -82,26 +82,8 @@ if __name__ == '__main__':
     else:
         policy_ub = None
 
-    # best_triger_policy, file_path = trigger_policy_search2(instance = instance,
-    #                                                                       tiers = tiers.tier,
-    #                                                                       vaccines = vaccines,
-    #                                                                       obj_func = multi_tier_objective,
-    #                                                                       n_replicas_train= n_replicas_train,
-    #                                                                       n_replicas_test= n_replicas_test,
-    #                                                                       instance_name= instance_name,   
-    #                                                                       policy_class = tiers.tier_type,
-    #                                                                       policy=selected_policy,
-    #                                                                       vaccine_policy= selected_vaccine_policy,
-    #                                                                       mp_pool= mp_pool,
-    #                                                                       crn_seeds= train_seeds,
-    #                                                                       unique_seeds_ori=test_seeds,
-    #                                                                       forcedOut_tiers= eval(args.fo),
-    #                                                                       redLimit=args.rl,
-    #                                                                       after_tiers=eval(args.aftert),
-    #                                                                       policy_field = args.field,
-    #                                                                       policy_ub= policy_ub)
-        
-    stoch_replicas, best_triger_policy, file_path = trigger_policy_search(instance = instance,
+    if args.det == True:
+        best_triger_policy, file_path = trigger_policy_search_det(instance = instance,
                                                                           tiers = tiers.tier,
                                                                           vaccines = vaccines,
                                                                           obj_func = multi_tier_objective,
@@ -119,5 +101,26 @@ if __name__ == '__main__':
                                                                           after_tiers=eval(args.aftert),
                                                                           policy_field = args.field,
                                                                           policy_ub= policy_ub)
+    elif args.det == False: 
+        stoch_replicas, best_triger_policy, file_path = trigger_policy_search(instance = instance,
+                                                                          tiers = tiers.tier,
+                                                                          vaccines = vaccines,
+                                                                          obj_func = multi_tier_objective,
+                                                                          n_replicas_train= n_replicas_train,
+                                                                          n_replicas_test= n_replicas_test,
+                                                                          instance_name= instance_name,   
+                                                                          policy_class = tiers.tier_type,
+                                                                          policy=selected_policy,
+                                                                          vaccine_policy= selected_vaccine_policy,
+                                                                          mp_pool= mp_pool,
+                                                                          crn_seeds= train_seeds,
+                                                                          unique_seeds_ori=test_seeds,
+                                                                          forcedOut_tiers= eval(args.fo),
+                                                                          redLimit=args.rl,
+                                                                          after_tiers=eval(args.aftert),
+                                                                          policy_field = args.field,
+                                                                          policy_ub= policy_ub)
+    else:
+        print('Wrong input argument for det')
     
 

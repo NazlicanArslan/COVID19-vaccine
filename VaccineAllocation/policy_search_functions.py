@@ -81,7 +81,6 @@ def trigger_policy_search(instance,
         best_sim = sim_output
         best_params = kwargs_out
         cost_record = {}
-
     else:
        # Check feasibility and optimality of all the simulated candidates
        #   - Feasibility: chance constraint feasible
@@ -280,7 +279,9 @@ def trigger_policy_search(instance,
     det_path_computed = False
     cost_record_ij = []
     stoch_outputs_test = []
+    #stoch_outputs_test.append(all_outputs[0])
     unique_seeds = []
+   # unique_seeds.append(seed_0)
     while len(stoch_outputs_test) < n_replicas_test:
         #breakpoint()
         chunksize = 1 if mp_pool is None else 1 * mp_pool._processes
@@ -322,11 +323,31 @@ def trigger_policy_search(instance,
             IH_sim = sim_j['IHT'][0:real_hosp_end_ix]
             IH_sim = IH_sim.sum(axis=(2,1))
             f_benchmark = hosp_benchmark
-          
+            # # time_blocks = [dt.datetime(2020, 5, 1),
+            # #             dt.datetime(2020, 9, 1),
+            # #             dt.datetime(2020, 12, 1), 
+            # #             dt.datetime(2021, 4, 1),
+            # #             dt.datetime(2021, 7, 1),
+            # #             dt.datetime(2021, 11, 1),
+            # #             dt.datetime(2021, 12, 1),
+            # #             dt.datetime(2022, 4, 4)] 
+            # time_blocks = [dt.datetime(2020, 5, 1)]
+            # valid_seed = True
+            # for tbx in range(len(time_blocks)):
+            #     T_end = instance.cal.calendar_ix[time_blocks[tbx]]
+            #     rsq = 1 - np.sum(((np.array(IH_sim[:T_end]) - np.array(f_benchmark[:T_end]))**2))/sum((np.array(f_benchmark[:T_end]) - np.mean(np.array(f_benchmark[:T_end])))**2)
+            #     print('test rsq', rsq, 'until', time_blocks[tbx])
+            #     if rsq <= 0.75:  
+            #         valid_seed = False
+            #     #breakpoint()
+            
             rsq = 1 - np.sum(((np.array(IH_sim) - np.array(f_benchmark))**2))/sum((np.array(f_benchmark) - np.mean(np.array(f_benchmark)))**2)
-            print('test rsq', rsq)
-            if rsq > 0.75:   
-                #breakpoint()
+           
+                
+            print('rsq', rsq)
+            #print('')   
+                       
+            if rsq > 0.75:    
                 stoch_outputs_test.append(sample_ij)
                 unique_seeds.append(seed_j)
            # else:
@@ -371,14 +392,14 @@ def trigger_policy_search(instance,
              best_sim, cost_record,  config,
              (crns_out[crns_out >= 0], unique_out[unique_out >= 0])),
             outfile, pickle.HIGHEST_PROTOCOL)
-    
+    print(unique_seeds)
     return stoch_replicas, best_policy, file_path
 
 
 
     
     
-def trigger_policy_search2(instance,
+def trigger_policy_search_det(instance,
                   tiers,
                   vaccines,
                   obj_func,
@@ -397,7 +418,7 @@ def trigger_policy_search2(instance,
                   policy_field="ToIHT",
                   policy_ub=None):
     '''
-    Search for optimal trigger policy with a fixed vaccine policy.
+        This function runs one deterministic path of the simulation.
     '''
     
     # Set up for policy search: build interventions according to input tiers
